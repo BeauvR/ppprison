@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Femdom Cage Reading Test</title>
+<style>
+  :root{
+    --bg:#181022;
+    --panel:#241a33;
+    --accent:#c084fc;
+    --accent2:#f472b6;
+    --text:#f1e9ff;
+    --muted:#a89cc0;
+    --good:#4ade80;
+    --bad:#f87171;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:linear-gradient(160deg,var(--bg),#100a1a 70%);
+    color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    -webkit-user-select:none;-moz-user-select:none;user-select:none;
+    overscroll-behavior:none;
+  }
+  #app{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    width:100%;
+    max-width:680px;
+    background:var(--panel);
+    border-radius:var(--radius);
+    padding:32px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  h1{
+    font-size:2em;
+    margin:0 0 8px 0;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    line-height:1.2;
+  }
+  h2{
+    font-size:1.4em;
+    margin:0 0 16px 0;
+    color:var(--accent);
+  }
+  p{line-height:1.6;color:var(--text);}
+  .muted{color:var(--muted);font-size:0.92em;}
+  .reading-text{
+    background:rgba(0,0,0,0.25);
+    border-radius:12px;
+    padding:20px;
+    max-height:50vh;
+    overflow-y:auto;
+    -webkit-user-select:none;user-select:none; /* text is not selectable or copyable anywhere in the app */
+    line-height:1.7;
+    margin-bottom:20px;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .reading-text p{margin:0 0 14px 0;}
+  .reading-text p:last-child{margin-bottom:0;}
+  .btn{
+    display:inline-block;
+    padding:14px 28px;
+    border-radius:999px;
+    border:none;
+    font-size:1em;
+    font-weight:600;
+    cursor:pointer;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    color:#1a1024;
+    transition:transform 0.15s, opacity 0.15s;
+    width:100%;
+  }
+  .btn:disabled{
+    opacity:0.35;
+    cursor:not-allowed;
+    background:#3a3050;
+    color:var(--muted);
+  }
+  .btn:not(:disabled):active{transform:scale(0.98);}
+  .timer{
+    text-align:center;
+    font-size:2.2em;
+    font-weight:700;
+    margin:18px 0;
+    color:var(--accent2);
+    letter-spacing:1px;
+  }
+  .progress-dots{
+    display:flex;gap:6px;justify-content:center;margin-bottom:20px;
+  }
+  .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:rgba(255,255,255,0.15);
+  }
+  .dot.active{background:var(--accent2);}
+  .dot.done{background:var(--good);}
+  .question{
+    margin-bottom:22px;
+  }
+  .question p.qtext{
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .option{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding:12px 16px;
+    margin-bottom:8px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.03);
+    color:var(--text);
+    cursor:pointer;
+    font-size:0.98em;
+  }
+  .option.selected{
+    border-color:var(--accent);
+    background:rgba(192,132,252,0.15);
+  }
+  .option:disabled{cursor:default;}
+  .feedback{
+    text-align:center;
+    font-weight:700;
+    padding:14px;
+    border-radius:10px;
+    margin-bottom:14px;
+  }
+  .feedback.bad{background:rgba(248,113,113,0.15);color:var(--bad);}
+  .feedback.good{background:rgba(74,222,128,0.15);color:var(--good);}
+  .stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin:20px 0;
+  }
+  .stat-box{
+    background:rgba(0,0,0,0.25);
+    border-radius:10px;
+    padding:14px;
+    text-align:center;
+  }
+  .stat-box .val{font-size:1.5em;font-weight:700;color:var(--accent2);}
+  .stat-box .lab{font-size:0.8em;color:var(--muted);}
+  .banner{
+    text-align:center;
+    font-size:0.85em;
+    color:var(--muted);
+    margin-top:16px;
+  }
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:4px;}
+  @media (max-width:480px){
+    .card{padding:22px;}
+    h1{font-size:1.5em;}
+    .timer{font-size:1.8em;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============ CONTENT ============ */
+const SECTIONS = [
+  {
+    key: "respect",
+    title: "Respect",
+    paragraphs: [
+      "Respectful online behaviour means treating others with kindness and consideration, as you would in real life. Respect different opinions, cultures, religions, genders, and sexualities, and always value consent, privacy, and confidentiality. Pause and think: if you were face to face with this person would you act similarly? Common sense goes a long way.",
+      "When it comes to femdom and kink online: remember that everyone you interact with is a person. Doms are not kink dispensers and have their own motivations for being involved. Subs are not \"worthless slaves\" but real people with thoughts and feelings that need considered. Learn about why others are in the space, and what they want to get out of it. Be willing to accept that not everyone is looking for the same things or the same level of intensity as you. Don't force your fantasies on other people who are uninterested.",
+      "All kink is based on two or more people — joining a space and having a set goal about \"what you want\" will often lead to disappointment, or in the worst case annoy others. Don't expect to rush into a dynamic from the first message — talk to people, make friends, and try to build something. Respect goes both ways.",
+      "Stay safe: Not everyone on the internet is who they claim to be. People can very easily lie about their intentions and who they are. Don't assume that because someone has been around for a while, they're automatically trustworthy. Don't hand out or let someone pressure you into sharing your personal information, personal content or anything else you wouldn't want a stranger to have. When meeting someone online, be careful when meeting in public, tell a trusted person who and where you are going to be, and prioritising your safety and wellbeing should always come first. A real friend online will have no issues protecting yours and their own health and safety."
+    ],
+    questions: [
+      {
+        q: "The guide hints to \"Common sense goes a long way.\" Which example best reflects that idea?",
+        options: [
+          "Sending a detailed list of your kinks in your first message to save time",
+          "Assuming people with server roles are automatically trustworthy",
+          "Thinking about how your message would come across if you were speaking face-to-face",
+          "Avoiding conversations unless they're directly about femdom"
+        ],
+        correct: 2
+      },
+      {
+        q: "Which statement is NOT supported by the guide?",
+        options: [
+          "Different people want different types of dynamics",
+          "Compatibility matters more than rushing into play",
+          "Everyone deserves to be treated like a person first",
+          "If two people share the same kink, a dynamic will probably work"
+        ],
+        correct: 3
+      },
+      {
+        q: "Someone has been active in the server for months and asks for a voice note to \"prove you're real.\" According to the guide, what should you do?",
+        options: [
+          "Send it — they've been here long enough to be trustworthy",
+          "Send it if they promise to keep it private",
+          "You're not obligated to share personal content or prove yourself. Only share what you're comfortable with",
+          "Ask them to send one first, then send yours"
+        ],
+        correct: 2
+      },
+      {
+        q: "Someone says they're uncomfortable with a conversation. What should you do?",
+        options: [
+          "Explain why they're overreacting and your opinion is correct",
+          "Keep trying to convince them until they understand your point",
+          "Continue the conversation — they'll tell you to stop if they really mean it",
+          "Respect their boundaries and move on"
+        ],
+        correct: 3
+      }
+    ]
+  },
+  {
+    key: "ssc",
+    title: "SSC (Safe, Sane, Consensual)",
+    paragraphs: [
+      "Safe, Sane, and Consensual, often shortened to SSC, is one of the most widely used ethical frameworks in kink and BDSM. It reminds people that kink should involve risk awareness, clear judgment, informed consent, and respect for every person's limits.",
+      "SSC does not mean every BDSM activity is risk-free. It means participants should reduce avoidable risk, communicate clearly, avoid coercion or impairment, and make sure consent is informed, specific, and reversible. In practice, that includes negotiation, safewords or signals, check-ins, aftercare, and a willingness to stop when something no longer feels safe.",
+      "For people who are exploring BDSM, power exchange, role play, sensation play, or other kink dynamics, SSC can provide a useful foundation. For people who feel shame, anxiety, trauma triggers, or relationship conflict around kink, kink-aware therapy can offer a private place to explore these experiences without judgment.",
+      "Safe: the risks are reduced as much as reasonably possible. Sane: having realistic expectations and using clear judgement. Consensual: everyone gives informed, voluntary, and reversible agreement."
+    ],
+    questions: [
+      {
+        q: "What does SSC stand for?",
+        options: ["Safe, Sane, Consensual", "Slow, Steady, Careful", "Secure, Sensible, Certain", "Safe, Simple, Committed"],
+        correct: 0
+      },
+      {
+        q: "Does SSC mean that BDSM activities are completely risk-free?",
+        options: ["Yes, SSC guarantees zero risk", "No, it means reducing avoidable risk, not eliminating all risk", "Risk isn't mentioned in the framework", "Only if a safeword is used"],
+        correct: 1
+      },
+      {
+        q: "What does 'Sane' refer to in the SSC framework?",
+        options: ["Being calm at all times", "Having realistic expectations and using clear judgement", "Avoiding all forms of role play", "Only playing with experienced partners"],
+        correct: 1
+      },
+      {
+        q: "What kind of agreement does 'Consensual' require?",
+        options: ["Agreement that, once given, cannot be changed", "Informed, voluntary, and reversible agreement", "Agreement only from the more dominant partner", "Verbal agreement given only once, before the relationship begins"],
+        correct: 1
+      }
+    ]
+  },
+  {
+    key: "consent",
+    title: "Consent",
+    paragraphs: [
+      "In basic terms, consent means permission or agreement for something to happen. Within the BDSM community, the difference between assault and play can be the presence of consent.",
+      "Consent should be taken very seriously and good consent practices within the BDSM community are very prevalent. Before people do a kink or sexual activity together they will usually have extensive consent negotiations and commonly discuss consent models and preferences between people that are part of the play or dynamic. Most often consent is between specific people about specific activities. Some consent can be negotiated to be ongoing (such as in 24/7 power exchange dynamics) other consent is for specific occasions or situations (such as for a particular scene).",
+      "Consent is something that all people participating in an interaction participate in. All sides of the spectrum in a play have a right to their limits and their boundaries regardless of role, gender, age, race or any other differentiator.",
+      "In modern kink practices, consent is more nuanced and is an ongoing practice that continuously takes into consideration a partner's understanding and eagerness. This means that all participants are enthusiastic about the prospect of what they are about to do, they are fully informed about the play — including potential risks, rewards and potential side effects — and they are giving explicit consent about those particular things."
+    ],
+    questions: [
+      {
+        q: "What can distinguish 'play' from assault within the BDSM community?",
+        options: ["The intensity of the activity", "The presence of consent", "Whether a safeword exists in theory", "The experience level of participants"],
+        correct: 1
+      },
+      {
+        q: "Can consent be ongoing rather than tied to a single occasion?",
+        options: ["No, consent must always be renegotiated every time", "Yes — for example, in 24/7 power exchange dynamics", "Only if it's written into a formal contract", "Ongoing consent is not discussed in the text"],
+        correct: 1
+      },
+      {
+        q: "Who has a right to set limits and boundaries in a scene?",
+        options: ["Only the top or Dominant", "Only the bottom or submissive", "All participants, regardless of role, gender, age, or race", "Only the person who initiated the scene"],
+        correct: 2
+      },
+      {
+        q: "Someone has agreed to a certain kink activity before. Does that automatically mean they consent to it again later?",
+        options: ["Yes, because previous consent creates a permanent agreement", "Yes, if they are already in a dynamic together", "No, consent can depend on the specific occasion or situation", "No, because consent is never possible in BDSM"],
+        correct: 2
+      }
+    ]
+  },
+  {
+    key: "safewords",
+    title: "Safewords",
+    paragraphs: [
+      "What exactly is a 'safe word'? In simplest terms, a safe word is a pre-agreed word or signal that means 'Stop... seriously, stop now!' in the middle of an activity. In other words, it's a short code that immediately communicates 'I've hit my limit' or 'I need to pause/stop now for my well-being.'",
+      "Originally, safe words gained prominence in the BDSM community, where play can involve intense sensations or power dynamics that make it hard to tell 'play-pretend no' from a real, serious no. By saying the special word, the participants know this isn't part of the fantasy; it's a real request to slow down or end the scene.",
+      "Importantly, any participant can use the safe word — top or bottom, Dominant or submissive. It's a mutual safety net, not just something for a submissive partner; even the Dominant can call the safe word if they feel things have gone off track or if an emergency arises.",
+      "While people often imagine a 'safe word' as literally a spoken word (like the classic example 'Red!'), it can actually be any agreed-upon signal — a phrase, a gesture, an object dropped on the floor. The key is that it's been discussed and chosen beforehand, and it's distinctive enough not to be confused with casual conversation or in-the-moment roleplay drama."
+    ],
+    questions: [
+      {
+        q: "What is the main purpose of a safe word?",
+        options: ["To make the scene more exciting", "To immediately signal a need to pause or stop for safety or well-being", "To indicate the start of a scene", "To replace all other communication during play"],
+        correct: 1
+      },
+      {
+        q: "Who is allowed to use the safe word?",
+        options: ["Only the submissive partner", "Only the Dominant partner", "Any participant, regardless of role", "Only whoever suggested using one"],
+        correct: 2
+      },
+      {
+        q: "Must a safe word be a spoken word?",
+        options: ["Yes, it always has to be spoken aloud", "No — it can be any pre-agreed signal, like a gesture or object", "No, but it must be a color", "Yes, and it must be the word 'stop'"],
+        correct: 1
+      },
+      {
+        q: "Why might participants avoid using an ordinary word like 'no' as their safe word?",
+        options: ["Because 'no' is too hard to remember", "Because during roleplay 'no' might be part of the fantasy, making a distinct word necessary for clarity", "Because 'no' is considered rude", "There's no reason — 'no' works fine as a safeword"],
+        correct: 1
+      }
+    ]
+  },
+  {
+    key: "vetting",
+    title: "Vetting",
+    paragraphs: [
+      "Vetting is the process of getting to know a potential Domme or sub to decide whether they are a safe, respectful, and compatible match. It involves open conversations about both kink and everyday topics, discussing boundaries, expectations, interests, and communication styles. Healthy dynamics are built on trust, mutual respect, communication, and consent.",
+      "The goal of vetting is not to find the \"right\" answers, but to understand whether your needs and expectations align, and that the person you are talking to is suitable and safe. There are no wrong answers unless they conflict with your own boundaries or make you feel unsafe.",
+      "Take your time. There is no reason to rush into a dynamic. Anyone who pressures you to commit quickly or claims that \"real subs obey immediately\" should be approached with caution. Trust is earned over time, and consistency matters. Pay attention to whether a person's actions match their words. Someone who frequently changes their story, ignores previous agreements, or behaves very differently in public and private may not be a good match.",
+      "Remember: online kink spaces are a place to meet others who share your interests, nothing more. Their primary purpose is not to \"get a dom\" or enter into a dynamic as fast as possible. Take your time and have an open mind. Once started, you can leave the vetting process at any time. You do not need a dramatic reason to decide someone is not the right fit. Compatibility alone is a valid reason to walk away. If others decide you're not right for them don't take it personally — everyone is trying to have fun and stay safe in their own way."
+    ],
+    questions: [
+      {
+        q: "What is the main purpose of vetting?",
+        options: [
+          "To find a Domme/sub as quickly as possible",
+          "To prove that you are experienced enough for a dynamic",
+          "To understand if someone is safe, respectful, and compatible with you",
+          "To make sure someone agrees with everything you believe"
+        ],
+        correct: 2
+      },
+      {
+        q: "What topics should be discussed during vetting?",
+        options: [
+          "Only specific kinks and limits",
+          "Only what roles each person wants",
+          "Only personal information",
+          "Both kink-related topics and everyday topics, including boundaries, expectations, interests, and communication styles"
+        ],
+        correct: 3
+      },
+      {
+        q: "How can you decide if you and someone else are a good fit?",
+        options: [
+          "By focusing mostly on shared interests and seeing how much you enjoy the same things",
+          "By giving the dynamic a chance first and figuring out compatibility as you go",
+          "By seeing if the other person has enough experience and a good reputation in the community",
+          "By taking time to communicate openly, discuss boundaries and expectations, and see if both people feel comfortable and respected"
+        ],
+        correct: 3
+      },
+      {
+        q: "Why should you take your time before entering a dynamic?",
+        options: [
+          "Because dynamics should never happen online",
+          "Because commitment is not allowed in kink spaces",
+          "Because trust is earned over time and rushing can lead to unsafe situations",
+          "Because nobody should communicate their expectations"
+        ],
+        correct: 2
+      }
+    ]
+  }
+];
+
+const READING_SECONDS = 120; // 2 minutes
+
+/* ============ STATE ============ */
+let state = {
+  screen: "start",      // start | reading | quiz | final
+  sectionIndex: 0,
+  timeLeft: READING_SECONDS,
+  timerInterval: null,
+  selectedAnswers: [],
+  quizFeedback: null,   // null | 'bad'
+  startedAt: null
+};
+
+let restartCountWrong = parseInt(sessionStorage.getItem('kst_restarts_wrong') || '0', 10);
+let restartCountLeft = parseInt(sessionStorage.getItem('kst_restarts_left') || '0', 10);
+
+/* ============ ANTI-CHEAT ============ */
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('copy', e => e.preventDefault());
+document.addEventListener('cut', e => e.preventDefault());
+document.addEventListener('paste', e => e.preventDefault());
+document.addEventListener('selectstart', e => {
+  // allow selection only inside reading text areas, block everywhere else attempted copy is still blocked above
+});
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  // block common devtools / copy shortcuts
+  if (e.key === 'F12') e.preventDefault();
+  if ((e.ctrlKey || e.metaKey) && (k === 'c' || k === 'x' || k === 'u' || k === 's' || k === 'p')) e.preventDefault();
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) e.preventDefault();
+});
+
+let tabSwitchArmed = false;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && tabSwitchArmed) {
+    triggerCheatRestart("You switched away from the test.");
+  }
+});
+window.addEventListener('blur', () => {
+  if (tabSwitchArmed) {
+    triggerCheatRestart("Focus left the test window.");
+  }
+});
+
+function armAntiCheat(on){ tabSwitchArmed = on; }
+
+function triggerCheatRestart(reason){
+  if (state.screen === "start" || state.screen === "final") return;
+  restartCountLeft++;
+  sessionStorage.setItem('kst_restarts_left', restartCountLeft);
+  resetToStart(reason);
+}
+
+/* ============ FLOW ============ */
+function resetToStart(message){
+  clearInterval(state.timerInterval);
+  armAntiCheat(false);
+  state = {
+    screen: "start",
+    sectionIndex: 0,
+    timeLeft: READING_SECONDS,
+    timerInterval: null,
+    selectedAnswers: [],
+    quizFeedback: null,
+    startedAt: state.startedAt // keep original start time across restarts for total elapsed stat
+  };
+  render(message);
+}
+
+function beginTest(){
+  state.startedAt = Date.now();
+  state.gameId = generateGameId();
+  restartCountWrong = 0;
+  restartCountLeft = 0;
+  sessionStorage.setItem('kst_restarts_wrong', 0);
+  sessionStorage.setItem('kst_restarts_left', 0);
+  goToReading(0);
+}
+
+function generateGameId(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars (0/O, 1/I)
+  let id = '';
+  for (let i = 0; i < 8; i++){
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id.slice(0,4) + '-' + id.slice(4);
+}
+
+function getGameId(){
+  return state.gameId || generateGameId();
+}
+
+function goToReading(i){
+  clearInterval(state.timerInterval);
+  state.screen = "reading";
+  state.sectionIndex = i;
+  state.timeLeft = READING_SECONDS;
+  armAntiCheat(true);
+  render();
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    if (state.timeLeft <= 0){
+      clearInterval(state.timerInterval);
+    }
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function goToQuiz(i){
+  clearInterval(state.timerInterval);
+  state.screen = "quiz";
+  state.sectionIndex = i;
+  state.selectedAnswers = new Array(SECTIONS[i].questions.length).fill(null);
+  state.quizFeedback = null;
+  armAntiCheat(true);
+  render();
+}
+
+function submitQuiz(){
+  const section = SECTIONS[state.sectionIndex];
+  const allCorrect = section.questions.every((q, idx) => state.selectedAnswers[idx] === q.correct);
+  if (!allCorrect){
+    restartCountWrong++;
+    sessionStorage.setItem('kst_restarts_wrong', restartCountWrong);
+    resetToStart("You answered a question incorrectly.");
+    return;
+  }
+  const next = state.sectionIndex + 1;
+  if (next < SECTIONS.length){
+    goToReading(next);
+  } else {
+    goToFinal();
+  }
+}
+
+function goToFinal(){
+  clearInterval(state.timerInterval);
+  armAntiCheat(false);
+  state.screen = "final";
+  render();
+}
+
+/* ============ RENDER ============ */
+const app = document.getElementById('app');
+
+function progressDots(){
+  let dots = '';
+  SECTIONS.forEach((s, i) => {
+    let cls = 'dot';
+    if (i < state.sectionIndex) cls += ' done';
+    else if (i === state.sectionIndex) cls += ' active';
+    dots += `<span class="${cls}"></span>`;
+  });
+  return `<div class="progress-dots">${dots}</div>`;
+}
+
+function render(message){
+  if (state.screen === "start"){
+    app.innerHTML = `
+      <div class="card">
+        <h1>Femdom Cage Reading Test</h1>
+        <p>This short test checks that you've read and understood five important topics: <b>Respect</b>, <b>SSC</b>, <b>Consent</b>, <b>Safewords</b>, and <b>Vetting</b>.</p>
+        <p class="muted">Here's how it works:</p>
+        <ul class="muted">
+          <li>You'll read one section at a time. Each reading takes at least 3 minutes before you can continue — take your time.</li>
+          <li>After each reading, you'll answer a few questions about it.</li>
+          <li>You must answer every question correctly to move forward. Getting one wrong sends you back to the very start.</li>
+          <li>Please stay on this tab and don't switch away — doing so will also restart the test.</li>
+          <li>At the end, you'll see a short summary of your run.</li>
+        </ul>
+        ${message ? `<div class="feedback bad">${message}</div>` : ''}
+        <button class="btn" onclick="beginTest()">Start the test</button>
+      </div>
+    `;
+    return;
+  }
+
+  if (state.screen === "reading"){
+    const section = SECTIONS[state.sectionIndex];
+    app.innerHTML = `
+      <div class="card">
+        ${progressDots()}
+        <h2>${section.title}</h2>
+        <div class="reading-text">
+          ${section.paragraphs.map(p => `<p>${p}</p>`).join('')}
+        </div>
+        <div class="timer" id="timerDisplay">${formatTime(state.timeLeft)}</div>
+        <button class="btn" id="continueBtn" ${state.timeLeft > 0 ? 'disabled' : ''} onclick="goToQuiz(${state.sectionIndex})">
+          ${state.timeLeft > 0 ? 'Please keep reading...' : 'Continue to questions'}
+        </button>
+        <p class="banner">Stay on this tab — leaving will restart the test.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (state.screen === "quiz"){
+    const section = SECTIONS[state.sectionIndex];
+    app.innerHTML = `
+      <div class="card">
+        ${progressDots()}
+        <h2>${section.title} — Check your understanding</h2>
+        ${section.questions.map((q, qi) => `
+          <div class="question">
+            <p class="qtext">${qi + 1}. ${q.q}</p>
+            ${q.options.map((opt, oi) => `
+              <button class="option ${state.selectedAnswers[qi] === oi ? 'selected' : ''}"
+                onclick="selectAnswer(${qi}, ${oi})">${opt}</button>
+            `).join('')}
+          </div>
+        `).join('')}
+        <button class="btn" ${state.selectedAnswers.includes(null) ? 'disabled' : ''} onclick="submitQuiz()">
+          Submit answers
+        </button>
+        <p class="banner">Every answer must be correct to continue. One mistake restarts the whole test.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (state.screen === "final"){
+    const elapsedMs = Date.now() - state.startedAt;
+    const totalMin = Math.floor(elapsedMs / 60000);
+    const totalSec = Math.floor((elapsedMs % 60000) / 1000);
+    app.innerHTML = `
+      <div class="card">
+        <h1>Test Complete</h1>
+        <p>You've read and correctly answered questions on all four sections. Thank you for taking the time to engage carefully with this material.</p>
+        <div class="stats">
+          <div class="stat-box">
+            <div class="val">${totalMin}m ${totalSec}s</div>
+            <div class="lab">Total time taken</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">${restartCountWrong}</div>
+            <div class="lab">Restarts from wrong answers</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">${restartCountLeft}</div>
+            <div class="lab">Restarts from leaving the window</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">${SECTIONS.length}</div>
+            <div class="lab">Sections completed</div>
+          </div>
+          <div class="stat-box">
+            <div class="val">${SECTIONS.reduce((a,s)=>a+s.questions.length,0)}</div>
+            <div class="lab">Questions answered correctly</div>
+          </div>
+        </div>
+        <p class="muted">Game ID: ${getGameId()}</p>
+      </div>
+    `;
+    return;
+  }
+}
+
+function selectAnswer(qi, oi){
+  state.selectedAnswers[qi] = oi;
+  render();
+}
+
+function updateTimerDisplay(){
+  const el = document.getElementById('timerDisplay');
+  const btn = document.getElementById('continueBtn');
+  if (el) el.textContent = formatTime(state.timeLeft);
+  if (btn && state.timeLeft <= 0){
+    btn.disabled = false;
+    btn.textContent = 'Continue to questions';
+  }
+}
+
+function formatTime(s){
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+// expose functions used in inline onclick
+window.beginTest = beginTest;
+window.goToQuiz = goToQuiz;
+window.submitQuiz = submitQuiz;
+window.selectAnswer = selectAnswer;
+
+render();
+</script>
+</body>
+</html>
