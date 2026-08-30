@@ -50,6 +50,39 @@ body::before {
 .start-card { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; display: flex; flex-direction: column; gap: 1.25rem; }
 .start-card label { font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .start-card p { font-size: 1rem; color: var(--text); opacity: 0.8; line-height: 1.5; }
+.session-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+.session-tab { padding: 10px 12px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.session-tab:hover { color: var(--text); }
+.session-tab.active { background: var(--pink-glow); border-color: var(--border-strong); color: var(--pink); }
+.session-settings { display: flex; flex-direction: column; gap: 10px; }
+.session-settings.hidden, .custom-lines-panel.hidden { display: none; }
+.session-settings > p { margin: 0; }
+.duration-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.duration-field { display: flex; flex-direction: column; gap: 7px; }
+.duration-field input { width: 100%; background: var(--surface2); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 1.1rem; padding: 9px 10px; text-align: center; }
+.duration-field input:focus { outline: none; border-color: var(--pink); }
+.setting-note { font-size: 0.78rem !important; color: var(--muted) !important; line-height: 1.45 !important; }
+.custom-lines-section { display: flex; flex-direction: column; gap: 10px; padding-top: 2px; }
+.custom-line-toggle { display: flex; align-items: center; gap: 9px; cursor: pointer; color: var(--text) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 0.9rem !important; }
+.custom-line-toggle.locked { cursor: not-allowed; opacity: 0.55; pointer-events: none; }
+.custom-line-toggle input { width: 18px; height: 18px; accent-color: var(--pink); cursor: pointer; }
+#customLines { width: 100%; min-height: 110px; padding: 12px 14px; background: var(--surface2); color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px; resize: vertical; outline: none; font-family: 'DM Mono', monospace; font-size: 0.85rem; line-height: 1.5; }
+#customLines:focus { border-color: var(--pink); }
+.settings-tools { display: flex; flex-direction: column; gap: 10px; padding-top: 2px; }
+.settings-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-secondary { width: 100%; padding: 11px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.06em; cursor: pointer; background: transparent; color: var(--pink); border: 1px solid var(--border-strong); border-radius: 8px; transition: background 0.15s, color 0.15s, opacity 0.15s; touch-action: manipulation; min-height: 42px; }
+.btn-secondary:hover { background: var(--pink-glow); }
+.settings-panel { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+.settings-panel.hidden, .imported-settings-summary.hidden { display: none; }
+.settings-panel label { font-size: 0.68rem; }
+.settings-code-field { width: 100%; min-height: 82px; padding: 10px; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: 7px; resize: vertical; outline: none; font-family: 'DM Mono', monospace; font-size: 0.72rem; line-height: 1.45; word-break: break-all; }
+.settings-code-field:focus { border-color: var(--pink); }
+.settings-code-field:disabled { opacity: 0.55; }
+.settings-message { min-height: 1.2em; font-family: 'DM Mono', monospace; font-size: 0.7rem; line-height: 1.4; color: var(--muted); }
+.settings-message.error { color: var(--incorrect); }
+.settings-message.success { color: var(--correct); }
+.settings-lock-note { font-size: 0.72rem !important; color: #ffc85c !important; line-height: 1.4 !important; }
+.settings-panel .btn-secondary { font-size: 0.72rem; }
 .num-input-row { display: flex; align-items: center; gap: 12px; }
 .num-btn { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--border-strong); background: transparent; color: var(--pink); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; touch-action: manipulation; }
 .num-btn:hover { background: var(--pink-glow); }
@@ -61,6 +94,7 @@ body::before {
 .mode-option:hover { border-color: var(--border-strong); background: rgba(255,77,166,0.05); }
 .mode-option.selected { border-color: var(--pink); background: var(--pink-glow); }
 .mode-option.disabled { opacity: 0.35; pointer-events: none; }
+.mode-option.locked { cursor: not-allowed; pointer-events: none; }
 .mode-checkbox { width: 18px; height: 18px; border: 1.5px solid var(--border-strong); border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
 .mode-option.selected .mode-checkbox { background: var(--pink); border-color: var(--pink); }
 .mode-checkbox::after { content: ''; width: 5px; height: 9px; border: 2px solid #000; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-1px); opacity: 0; transition: opacity 0.1s; }
@@ -139,6 +173,9 @@ body::before {
 .end-modes { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 8px; }
 .end-modes-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
 .end-modes-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.imported-settings-summary { width: 100%; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 12px; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 8px; }
+.imported-settings-label { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--pink); }
+.imported-settings-code { min-height: 74px; width: 100%; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 9px; resize: vertical; outline: none; font-family: 'DM Mono', monospace; font-size: 0.68rem; line-height: 1.45; word-break: break-all; }
 .mode-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 0.06em; }
 .mode-badge.punishment { background: rgba(255,51,85,0.15); border: 1px solid rgba(255,51,85,0.4); color: var(--incorrect); }
 .mode-badge.punishmentPlus { background: rgba(180,0,40,0.22); border: 1px solid rgba(255,0,60,0.6); color: #ff1a4d; }
@@ -146,6 +183,8 @@ body::before {
 .mode-badge.nobreaks { background: rgba(255,165,0,0.12); border: 1px solid rgba(255,165,0,0.35); color: #ffaa33; }
 .mode-badge.standard { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
 .mode-badge.quiz { background: rgba(150,77,255,0.12); border: 1px solid rgba(150,77,255,0.35); color: #b07aff; }
+.mode-badge.timed { background: rgba(77,210,190,0.12); border: 1px solid rgba(77,210,190,0.35); color: #5de0c9; }
+.mode-badge.custom { background: rgba(255,190,77,0.12); border: 1px solid rgba(255,190,77,0.35); color: #ffc85c; }
 .end-id { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 0.12em; }
 .btn-restart { width: 100%; padding: 13px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; background: transparent; color: var(--pink); border: 1px solid var(--border-strong); border-radius: 10px; transition: background 0.15s; touch-action: manipulation; min-height: 44px; }
 .btn-restart:hover { background: var(--pink-glow); }
@@ -204,17 +243,65 @@ body::before {
     </div>
     <div class="divider"></div>
     <div class="start-card">
-      <p>How many texts has Perfection assigned you?</p>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-        <label>Number of tasks</label>
-        <div class="num-input-row">
-          <button class="num-btn" onclick="adjustCount(-1)">&#8722;</button>
-          <input type="number" id="taskCount" min="1" max="999" value="5">
-          <button class="num-btn" onclick="adjustCount(1)">+</button>
+      <div class="session-tabs" role="tablist" aria-label="Session type">
+        <button class="session-tab active" id="tabBasic" role="tab" aria-selected="true" onclick="selectSessionMode('basic')">Basic</button>
+        <button class="session-tab" id="tabTimed" role="tab" aria-selected="false" onclick="selectSessionMode('timed')">Timed</button>
+      </div>
+      <div id="basicSettings" class="session-settings">
+        <p>How many texts has Perfection assigned you?</p>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <label>Number of tasks</label>
+          <div class="num-input-row">
+            <button class="num-btn" onclick="adjustCount(-1)">&#8722;</button>
+            <input type="number" id="taskCount" min="1" max="999" value="5">
+            <button class="num-btn" onclick="adjustCount(1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div id="timedSettings" class="session-settings hidden">
+        <p>How long should Perfection keep you typing?</p>
+        <div class="duration-row">
+          <div class="duration-field">
+            <label for="timedHours">Hours</label>
+            <input type="number" id="timedHours" min="0" max="99" value="0">
+          </div>
+          <div class="duration-field">
+            <label for="timedMinutes">Minutes</label>
+            <input type="number" id="timedMinutes" min="0" max="59" value="30">
+          </div>
+        </div>
+        <p class="setting-note">Timed sessions start with No Breaks enabled. A pause longer than 3 seconds adds 3 minutes to the finish time.</p>
+      </div>
+      <div class="custom-lines-section">
+        <label class="custom-line-toggle" for="useCustomLines">
+          <input type="checkbox" id="useCustomLines" onchange="toggleCustomLines()">
+          <span>Use custom lines</span>
+        </label>
+        <div id="customLinesPanel" class="custom-lines-panel hidden">
+          <textarea id="customLines" rows="4" maxlength="50000" placeholder="Paste or type one line per entry..."></textarea>
+          <p class="setting-note">Each non-empty line replaces a built-in paragraph. Lines repeat in order when the session needs more.</p>
+        </div>
+      </div>
+      <div class="settings-tools">
+        <div class="settings-actions">
+          <button class="btn-secondary" type="button" onclick="exportSettings()">Export Settings</button>
+          <button class="btn-secondary" type="button" onclick="toggleImportPanel()">Import Settings</button>
+        </div>
+        <div id="settingsExportPanel" class="settings-panel hidden">
+          <label for="settingsCodeOutput">Settings code</label>
+          <textarea id="settingsCodeOutput" class="settings-code-field" readonly placeholder="Click Export Settings to generate a code."></textarea>
+          <button class="btn-secondary" type="button" onclick="copySettingsCode()">Copy Code</button>
+        </div>
+        <div id="settingsImportPanel" class="settings-panel hidden">
+          <label for="settingsImportInput">Paste settings code</label>
+          <textarea id="settingsImportInput" class="settings-code-field" rows="4" placeholder="Paste a WriteForPerfection settings code here..."></textarea>
+          <button class="btn-secondary" type="button" onclick="importSettings()">Apply Imported Settings</button>
+          <button class="btn-secondary" type="button" onclick="clearImportedSettings()">Clear Imported Settings</button>
+          <div id="settingsMessage" class="settings-message"></div>
         </div>
       </div>
       <div class="modes-section">
-        <div class="modes-label">Modes</div>
+        <div class="modes-label">Optional modes</div>
         <div class="mode-option" id="modePunishment" onclick="toggleMode('punishment')">
           <div class="mode-checkbox"></div>
           <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Punishments</div>
@@ -233,7 +320,7 @@ body::before {
         <div class="mode-option" id="modeNobreaks" onclick="toggleMode('nobreaks')">
           <div class="mode-checkbox"></div>
           <div class="mode-text"><div class="mode-name-row"><div class="mode-name">No Breaks</div>
-          <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">An additional task is added if the player stops typing for more than 5 seconds.</div></span></div></div>
+          <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">In Basic, an additional task is added after 5 seconds. In Timed, a 3-minute penalty is added after 3 seconds.</div></span></div></div>
         </div>
         <div class="mode-option" id="modeQuiz" onclick="toggleMode('quiz')">
           <div class="mode-checkbox"></div>
@@ -322,18 +409,26 @@ body::before {
       <div class="end-modes-label">Modes Active</div>
       <div class="end-modes-list" id="endModesList"></div>
     </div>
+    <div id="importedSettingsSummary" class="imported-settings-summary hidden">
+      <div class="imported-settings-label">Imported Settings Used</div>
+      <textarea id="importedSettingsCodeEnd" class="imported-settings-code" readonly></textarea>
+    </div>
     <div class="end-id" id="endTextList" style="text-align:center;line-height:1.8;">-</div>
     <button class="btn-restart" onclick="restartGame()">Start New Session</button>
   </div>
 </div>
 
 <script>
-window.addEventListener('paste',e=>e.preventDefault());
-window.addEventListener('copy',e=>e.preventDefault());
-window.addEventListener('cut',e=>e.preventDefault());
-window.addEventListener('drop',e=>e.preventDefault());
+function isSettingsTextField(target){
+  return target&&['customLines','settingsCodeOutput','settingsImportInput','importedSettingsCodeEnd'].includes(target.id);
+}
+window.addEventListener('paste',e=>{if(!isSettingsTextField(e.target))e.preventDefault();});
+window.addEventListener('copy',e=>{if(!isSettingsTextField(e.target))e.preventDefault();});
+window.addEventListener('cut',e=>{if(!isSettingsTextField(e.target))e.preventDefault();});
+window.addEventListener('drop',e=>{if(!isSettingsTextField(e.target))e.preventDefault();});
 window.addEventListener('keydown',e=>{
-  const forbidden=(e.ctrlKey||e.metaKey)&&['v','c','x','a','z','y'].includes(e.key.toLowerCase());
+  const editingSettings=e.target&&isSettingsTextField(e.target);
+  const forbidden=!editingSettings&&(e.ctrlKey||e.metaKey)&&['v','c','x','a','z','y'].includes(e.key.toLowerCase());
   if(forbidden)e.preventDefault();
   if(e.key==='Enter'){
     if(document.getElementById('play').classList.contains('active')){
@@ -343,6 +438,9 @@ window.addEventListener('keydown',e=>{
     }
   }
 });
+document.addEventListener('visibilitychange',()=>{if(modes.nobreaks)checkInactivity();});
+window.addEventListener('focus',()=>{if(modes.nobreaks)checkInactivity();});
+window.addEventListener('pageshow',()=>{if(modes.nobreaks)checkInactivity();});
 
 const ALL_TEXTS=[
   {label:"Simone de Beauvoir",content:`Simone de Beauvoir was a French writer, feminist, social theorist, and existential philosopher. She is best known for her groundbreaking ideas surrounding feminism. In her 1949 book "The Second Sex", Beauvoir asserted that women are as capable of choice as men, and thus can choose to elevate themselves, moving beyond the "immanence" to which they were previously resigned and reaching "transcendence", a position in which one takes responsibility for oneself and the world, where one chooses one's freedom. She wrote, "One is not born, but rather becomes, a woman... her wings are cut and then she is blamed for not knowing how to fly."`},
@@ -454,15 +552,77 @@ QUIZ_DATA.forEach(e=>{quizLookup[e.label]=e.questions;});
 
 // ── MODES ──
 const modes={punishment:false,punishmentPlus:false,slow:false,nobreaks:false,quiz:false};
-function toggleMode(name){
-  modes[name]=!modes[name];
+const TIMED_BREAK_GRACE_MS=3000;
+const TIMED_BREAK_PENALTY_MINUTES=3;
+const TIMED_PUNISHMENT_PENALTY_MINUTES=1;
+const TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES=3;
+const SLOW_KEY_INTERVAL_MS=1000;
+let sessionMode='basic';
+let customLineTexts=[];
+let timedRequiredMs=0,timedDeadline=0,timedBreakTriggered=false;
+let sessionEnded=false;
+
+
+function setMode(name,value){
+  modes[name]=value;
   const key='mode'+name.charAt(0).toUpperCase()+name.slice(1);
-  document.getElementById(key).classList.toggle('selected',modes[name]);
-  if(name==='punishment'||name==='punishmentPlus'){
-    const other=name==='punishment'?'punishmentPlus':'punishment';
-    const ok='mode'+other.charAt(0).toUpperCase()+other.slice(1);
-    document.getElementById(ok).classList.toggle('disabled',modes[name]);
+  const el=document.getElementById(key);
+  if(el)el.classList.toggle('selected',value);
+}
+
+function toggleMode(name){
+  if(importedSettingsLocked)return;
+  if(name==='nobreaks'&&sessionMode==='timed')return;
+  if(name==='quiz'&&(document.getElementById('useCustomLines').checked||sessionMode==='timed'))return;
+  setMode(name,!modes[name]);
+  refreshModeLocks();
+}
+
+function refreshModeLocks(){
+  document.getElementById('modePunishment').classList.toggle('disabled',modes.punishmentPlus);
+  document.getElementById('modePunishmentPlus').classList.toggle('disabled',modes.punishment);
+  const quizOption=document.getElementById('modeQuiz');
+  const customEnabled=document.getElementById('useCustomLines').checked;
+  const quizLocked=customEnabled||sessionMode==='timed';
+  quizOption.classList.toggle('disabled',quizLocked);
+  quizOption.setAttribute('aria-disabled',quizLocked?'true':'false');
+}
+
+function selectSessionMode(name){
+  sessionMode=name;
+  const basic=name==='basic';
+  document.getElementById('tabBasic').classList.toggle('active',basic);
+  document.getElementById('tabTimed').classList.toggle('active',!basic);
+  document.getElementById('tabBasic').setAttribute('aria-selected',basic?'true':'false');
+  document.getElementById('tabTimed').setAttribute('aria-selected',basic?'false':'true');
+  document.getElementById('basicSettings').classList.toggle('hidden',!basic);
+  document.getElementById('timedSettings').classList.toggle('hidden',basic);
+  const noBreaksOption=document.getElementById('modeNobreaks');
+  if(!basic){
+    if(!modes.nobreaks)setMode('nobreaks',true);
+    noBreaksOption.classList.add('locked');
+    noBreaksOption.setAttribute('aria-disabled','true');
+  }else{
+    noBreaksOption.classList.remove('locked');
+    noBreaksOption.removeAttribute('aria-disabled');
   }
+  if(!basic&&modes.quiz)setMode('quiz',false);
+  refreshModeLocks();
+}
+
+function toggleCustomLines(){
+  const enabled=document.getElementById('useCustomLines').checked;
+  document.getElementById('customLinesPanel').classList.toggle('hidden',!enabled);
+  const quizOption=document.getElementById('modeQuiz');
+  if(enabled){
+    if(modes.quiz)setMode('quiz',false);
+    quizOption.classList.add('disabled');
+    quizOption.setAttribute('aria-disabled','true');
+  }else{
+    quizOption.classList.remove('disabled');
+    quizOption.removeAttribute('aria-disabled');
+  }
+  if(enabled)document.getElementById('customLines').focus();
 }
 
 // ── STATE ──
@@ -470,9 +630,177 @@ let selected=[],current=0,total=1,startTime,taskStartTime,timerInterval;
 let taskErrors=0,taskErrorCounted={},totalErrors=0,taskWpms=[];
 let totalPunishments=0,prevInputLength=0,sentenceStartWords=[];
 let slowLastKeyTime=0;
-let noBreaksTimer=null,totalInactivityPenalties=0;
+let noBreaksTimer=null,inactivityDeadline=0,totalInactivityPenalties=0;
 let totalQuizShown=0,totalQuizPassed=0,totalQuizWrongAttempts=0;
+let totalPunishmentTimeMs=0;
 let quizTaskWpm=0,quizCountdownTimer=null,quizCountdownInterval=null,quizAnswered=false;
+const SETTINGS_CODE_PREFIX='WFP1.';
+const SETTINGS_MODE_NAMES=['punishment','punishmentPlus','slow','nobreaks','quiz'];
+let importedSettingsCode='',importedSettingsLocked=false;
+
+function base64UrlEncode(value){
+  const bytes=new TextEncoder().encode(value);
+  let binary='';
+  for(let i=0;i<bytes.length;i+=0x8000)
+    binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+function base64UrlDecode(value){
+  const padded=value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4);
+  const binary=atob(padded);
+  const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function getSettingsPayload(){
+  return {
+    v:1,
+    sessionMode,
+    taskCount:parseInt(document.getElementById('taskCount').value)||1,
+    timedHours:parseInt(document.getElementById('timedHours').value)||0,
+    timedMinutes:parseInt(document.getElementById('timedMinutes').value)||0,
+    modes:Object.fromEntries(SETTINGS_MODE_NAMES.map(name=>[name,!!modes[name]])),
+    useCustomLines:document.getElementById('useCustomLines').checked,
+    customLines:document.getElementById('customLines').value
+  };
+}
+
+function encodeSettingsCode(payload){
+  return SETTINGS_CODE_PREFIX+base64UrlEncode(JSON.stringify(payload));
+}
+
+function validateSettingsPayload(payload){
+  if(!payload||payload.v!==1)throw new Error('This settings code is not supported.');
+  if(!['basic','timed'].includes(payload.sessionMode))throw new Error('The settings code has an invalid session type.');
+  if(!Number.isInteger(payload.taskCount)||payload.taskCount<1||payload.taskCount>999)
+    throw new Error('The settings code has an invalid task count.');
+  if(!Number.isInteger(payload.timedHours)||payload.timedHours<0||payload.timedHours>99||
+     !Number.isInteger(payload.timedMinutes)||payload.timedMinutes<0||payload.timedMinutes>59)
+    throw new Error('The settings code has an invalid timed duration.');
+  if(payload.sessionMode==='timed'&&payload.timedHours*60+payload.timedMinutes<1)
+    throw new Error('The settings code has a timed duration of less than one minute.');
+  if(!payload.modes||SETTINGS_MODE_NAMES.some(name=>typeof payload.modes[name]!=='boolean'))
+    throw new Error('The settings code has invalid mode settings.');
+  if(payload.modes.punishment&&payload.modes.punishmentPlus)
+    throw new Error('The settings code selects both punishment modes.');
+  if(payload.sessionMode==='timed'&&!payload.modes.nobreaks)
+    throw new Error('Timed settings must include No Breaks.');
+  if(typeof payload.useCustomLines!=='boolean'||typeof payload.customLines!=='string')
+    throw new Error('The settings code has invalid custom-line settings.');
+  if(payload.customLines.length>50000)
+    throw new Error('The custom-line content in this code is too large.');
+  const hasCustomLines=payload.customLines.split(/\r?\n/).some(line=>line.trim());
+  if(payload.useCustomLines&&!hasCustomLines)
+    throw new Error('The settings code enables Custom Lines but contains no lines.');
+  if(payload.useCustomLines&&payload.modes.quiz)
+    throw new Error('Quiz cannot be used with Custom Lines.');
+  return payload;
+}
+
+function decodeSettingsCode(rawCode){
+  const code=rawCode.trim();
+  if(!code.startsWith(SETTINGS_CODE_PREFIX))throw new Error('That does not look like a WriteForPerfection settings code.');
+  if(code.length>100000)throw new Error('That settings code is too large.');
+  let payload;
+  try{
+    payload=JSON.parse(base64UrlDecode(code.slice(SETTINGS_CODE_PREFIX.length)));
+  }catch(error){
+    throw new Error('That settings code is incomplete or invalid.');
+  }
+  return {code,payload:validateSettingsPayload(payload)};
+}
+
+function setSettingsMessage(message,type=''){
+  const el=document.getElementById('settingsMessage');
+  el.textContent=message;
+  el.className='settings-message'+(type?' '+type:'');
+}
+
+function exportSettings(){
+  const code=importedSettingsCode||encodeSettingsCode(getSettingsPayload());
+  document.getElementById('settingsCodeOutput').value=code;
+  document.getElementById('settingsExportPanel').classList.remove('hidden');
+  setSettingsMessage('Settings code generated.','success');
+}
+
+function toggleImportPanel(){
+  const panel=document.getElementById('settingsImportPanel');
+  const opening=panel.classList.contains('hidden');
+  panel.classList.toggle('hidden',!opening);
+  if(opening)document.getElementById('settingsImportInput').focus();
+}
+
+function copySettingsCode(){
+  const field=document.getElementById('settingsCodeOutput');
+  if(!field.value)exportSettings();
+  field.focus();
+  field.select();
+  const code=field.value;
+  const copied=()=>{
+    try{return document.execCommand('copy');}catch(error){return false;}
+  };
+  if(typeof navigator!=='undefined'&&navigator.clipboard){
+    navigator.clipboard.writeText(code)
+      .then(()=>setSettingsMessage('Settings code copied.','success'))
+      .catch(()=>setSettingsMessage(copied()?'Settings code copied.':'Select the code to copy it.','success'));
+  }else{
+    setSettingsMessage(copied()?'Settings code copied.':'Select the code to copy it.','success');
+  }
+}
+
+function lockImportedSettings(){
+  importedSettingsLocked=true;
+  document.querySelectorAll('.session-tab,.num-btn,#taskCount,#timedHours,#timedMinutes,.custom-line-toggle,#customLines,.mode-option').forEach(control=>{
+    control.disabled=true;
+    control.classList.add('locked');
+    control.setAttribute('aria-disabled','true');
+  });
+}
+
+function unlockImportedSettings(){
+  importedSettingsLocked=false;
+  document.querySelectorAll('.session-tab,.num-btn,#taskCount,#timedHours,#timedMinutes,.custom-line-toggle,#customLines,.mode-option').forEach(control=>{
+    control.disabled=false;
+    control.classList.remove('locked');
+    control.removeAttribute('aria-disabled');
+  });
+  selectSessionMode(sessionMode);
+  toggleCustomLines();
+  refreshModeLocks();
+}
+
+function clearImportedSettings(){
+  importedSettingsCode='';
+  unlockImportedSettings();
+  document.getElementById('settingsImportInput').value='';
+  document.getElementById('settingsCodeOutput').value='';
+  setSettingsMessage('Imported settings cleared. You can edit the configuration again.');
+}
+
+function importSettings(){
+  try{
+    const result=decodeSettingsCode(document.getElementById('settingsImportInput').value);
+    const payload=result.payload;
+    sessionMode=payload.sessionMode;
+    document.getElementById('taskCount').value=payload.taskCount;
+    document.getElementById('timedHours').value=payload.timedHours;
+    document.getElementById('timedMinutes').value=payload.timedMinutes;
+    document.getElementById('useCustomLines').checked=payload.useCustomLines;
+    document.getElementById('customLines').value=payload.customLines;
+    SETTINGS_MODE_NAMES.forEach(name=>modes[name]=payload.modes[name]);
+    selectSessionMode(payload.sessionMode);
+    toggleCustomLines();
+    refreshModeLocks();
+    importedSettingsCode=result.code;
+    document.getElementById('settingsCodeOutput').value=result.code;
+    document.getElementById('settingsExportPanel').classList.remove('hidden');
+    lockImportedSettings();
+    setSettingsMessage('Imported settings applied and locked.','success');
+  }catch(error){
+    setSettingsMessage(error.message||'Unable to import that settings code.','error');
+  }
+}
 
 function clearQuizCountdown(){
   if(quizCountdownTimer){clearTimeout(quizCountdownTimer);quizCountdownTimer=null;}
@@ -484,13 +812,29 @@ function adjustCount(d){
   let v=parseInt(el.value)+d;if(v<1)v=1;el.value=v;
 }
 
+function readCustomLines(){
+  return document.getElementById('customLines').value
+    .split(/\r?\n/)
+    .map(line=>line.trim().replace(/\s+/g,' '))
+    .filter(Boolean);
+}
+
 function shuffleArray(arr){
   const a=[...arr];
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
 
-function buildPool(needed){
+function buildPool(needed,offset=0){
+  if(customLineTexts.length){
+    const result=[];
+    for(let i=0;i<needed;i++){
+      const index=offset+i;
+      const lineIndex=index%customLineTexts.length;
+      result.push({label:'Custom line '+(lineIndex+1),content:customLineTexts[lineIndex]});
+    }
+    return result;
+  }
   let result=[];
   while(result.length<needed){
     const s=shuffleArray(ALL_TEXTS);
@@ -500,14 +844,39 @@ function buildPool(needed){
 }
 
 function startGame(){
-  total=Math.max(1,parseInt(document.getElementById('taskCount').value)||5);
-  selected=buildPool(total);current=0;totalErrors=0;totalPunishments=0;taskWpms=[];
+  customLineTexts=document.getElementById('useCustomLines').checked?readCustomLines():[];
+  if(document.getElementById('useCustomLines').checked&&!customLineTexts.length){
+    alert('Add at least one custom line before starting.');
+    document.getElementById('customLines').focus();
+    return;
+  }
+  if(sessionMode==='timed'){
+    const hours=Math.max(0,parseInt(document.getElementById('timedHours').value)||0);
+    const minutes=Math.min(59,Math.max(0,parseInt(document.getElementById('timedMinutes').value)||0));
+    timedRequiredMs=(hours*60+minutes)*60*1000;
+    if(timedRequiredMs<60000){
+      alert('Timed sessions must be at least 1 minute long.');
+      return;
+    }
+    total=1;
+    selected=buildPool(1,0);
+  }else{
+    total=Math.max(1,parseInt(document.getElementById('taskCount').value)||5);
+    selected=buildPool(total,0);
+  }
+current=0;totalErrors=0;totalPunishments=0;taskWpms=[];
+totalPunishmentTimeMs=0;
   slowLastKeyTime=0;totalInactivityPenalties=0;
   totalQuizShown=0;totalQuizPassed=0;totalQuizWrongAttempts=0;
   quizTaskWpm=0;quizAnswered=false;
+  timedBreakTriggered=false;sessionEnded=false;
   clearQuizCountdown();
   if(noBreaksTimer){clearTimeout(noBreaksTimer);noBreaksTimer=null;}
-  startTime=Date.now();startTimer();switchScreen('play');loadText();
+  inactivityDeadline=0;
+  startTime=Date.now();
+  timedDeadline=sessionMode==='timed'?startTime+timedRequiredMs:0;
+  document.getElementById('timer').innerText=sessionMode==='timed'?formatClock(timedRequiredMs):'00:00:00';
+  startTimer();switchScreen('play');loadText();
 }
 
 function switchScreen(id){
@@ -526,7 +895,7 @@ function loadText(preserveErrors=false){
   const words=text.split(' ');
   document.getElementById('textDisplay').innerHTML=words.map((w,i)=>{
     const chars=w.split('').map(c=>`<span class="char">${escapeHtml(c)}</span>`).join('');
-    const sw=w.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const sw=escapeHtml(w).replace(/"/g,'&quot;');
     return`<span class="word" id="w${i}" data-word="${sw}">${chars}<span class="word-overflow"></span></span>`;
   }).join(' ');
   sentenceStartWords=[0];
@@ -548,10 +917,13 @@ function loadText(preserveErrors=false){
 }
 
 function handleKey(e){
-  if(modes.nobreaks)resetNoBreaksTimer();
+  if(modes.nobreaks){
+    checkInactivity();
+    if(sessionEnded){e.preventDefault();return;}
+  }
   if(modes.slow&&e.key.length===1){
     const now=Date.now();
-    if(now-slowLastKeyTime<500){e.preventDefault();return;}
+    if(now-slowLastKeyTime<SLOW_KEY_INTERVAL_MS){e.preventDefault();return;}
   }
   if(e.key===' '){
     const inputEl2=document.getElementById('inputBox');
@@ -597,16 +969,21 @@ function normalise(str){
 
 function checkTyping(e){
   const inputEl=document.getElementById('inputBox');
+  if(modes.nobreaks){
+    checkInactivity();
+    if(sessionEnded)return;
+  }
   const input=inputEl.value;
   if(modes.slow){
     const ca=input.length-prevInputLength;
     if(ca>1){inputEl.value=inputEl.value.slice(0,prevInputLength);return;}
     if(ca===1){
       const now=Date.now();
-      if(now-slowLastKeyTime<500){inputEl.value=inputEl.value.slice(0,prevInputLength);return;}
+      if(now-slowLastKeyTime<SLOW_KEY_INTERVAL_MS){inputEl.value=inputEl.value.slice(0,prevInputLength);return;}
       slowLastKeyTime=now;
     }
   }
+  if(modes.nobreaks)resetNoBreaksTimer();
   const isTyping=input.length>prevInputLength;
   prevInputLength=input.length;
   const typedWords=input.split(' ');
@@ -673,22 +1050,40 @@ function checkTyping(e){
 
 function triggerPunishment(){
   totalPunishments++;
-  document.getElementById('errorFlashSub').textContent='Task Reset';
+  let subText='Task Reset';
+  if(sessionMode==='timed'){
+    timedRequiredMs+=TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES*60*1000;
+    timedDeadline+=TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES*60*1000;
+    totalPunishmentTimeMs+=TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES*60*1000;
+    subText='Task Reset · +'+TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES+' Min';
+    updateProgress();
+  }
+  document.getElementById('errorFlashSub').textContent=subText;
   const flash=document.getElementById('errorFlash');
   flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');
   const inputEl=document.getElementById('inputBox');
   inputEl.disabled=true;inputEl.style.opacity='0.5';inputEl.style.cursor='default';
-  setTimeout(()=>{loadText(true);},1000);
+  pauseNoBreaksTimer();
+  setTimeout(()=>{if(!sessionEnded)loadText(true);},1000);
 }
 
 function triggerPunishmentLight(){
   totalPunishments++;
-  document.getElementById('errorFlashSub').textContent='Sentence Reset — 3s';
+  let subText='Sentence Reset — 3s';
+  if(sessionMode==='timed'){
+    timedRequiredMs+=TIMED_PUNISHMENT_PENALTY_MINUTES*60*1000;
+    timedDeadline+=TIMED_PUNISHMENT_PENALTY_MINUTES*60*1000;
+    totalPunishmentTimeMs+=TIMED_PUNISHMENT_PENALTY_MINUTES*60*1000;
+    subText='Sentence Reset · +'+TIMED_PUNISHMENT_PENALTY_MINUTES+' Min';
+    updateProgress();
+  }
+  document.getElementById('errorFlashSub').textContent=subText;
   const flash=document.getElementById('errorFlash');
   flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');
   const inputEl=document.getElementById('inputBox');
   const cv=inputEl.value;
   inputEl.disabled=true;inputEl.style.opacity='0.5';inputEl.style.cursor='default';
+  pauseNoBreaksTimer();
   const tw=cv.split(' ');
   const cwi=Math.max(0,tw.length-1);
   let ss=0;for(const s of sentenceStartWords){if(s<=cwi)ss=s;else break;}
@@ -696,19 +1091,51 @@ function triggerPunishmentLight(){
   const ws=document.querySelectorAll('.word');
   for(let i=ss;i<ws.length;i++)delete taskErrorCounted[i];
   setTimeout(()=>{
+    if(sessionEnded)return;
     inputEl.value=revertTo;prevInputLength=revertTo.length;
     inputEl.disabled=false;inputEl.style.opacity='';inputEl.style.cursor='';inputEl.focus();
     checkTyping(null);if(modes.nobreaks)resetNoBreaksTimer();
   },3000);
 }
 
-function resetNoBreaksTimer(){
+function pauseNoBreaksTimer(){
   if(noBreaksTimer)clearTimeout(noBreaksTimer);
-  noBreaksTimer=setTimeout(triggerInactivity,5000);
+  noBreaksTimer=null;
+  inactivityDeadline=0;
+}
+
+function resetNoBreaksTimer(){
+  pauseNoBreaksTimer();
+  timedBreakTriggered=false;
+  inactivityDeadline=Date.now()+(sessionMode==='timed'?TIMED_BREAK_GRACE_MS:5000);
+  noBreaksTimer=setTimeout(checkInactivity,sessionMode==='timed'?TIMED_BREAK_GRACE_MS:5000);
+}
+
+function checkInactivity(){
+  if(!modes.nobreaks||sessionEnded||!document.getElementById('play').classList.contains('active'))return;
+  if(inactivityDeadline===0)return; // paused (e.g. mid punishment-reset) — nothing to check yet
+  if(Date.now()>=inactivityDeadline){
+    if(noBreaksTimer){clearTimeout(noBreaksTimer);noBreaksTimer=null;}
+    triggerInactivity();
+  }
 }
 
 function triggerInactivity(){
-  const extra=buildPool(1);selected.push(...extra);total++;totalInactivityPenalties++;updateProgress();
+  if(sessionMode==='timed'){
+    if(!modes.nobreaks||timedBreakTriggered||sessionEnded)return;
+    timedBreakTriggered=true;
+    timedRequiredMs+=TIMED_BREAK_PENALTY_MINUTES*60*1000;
+    timedDeadline+=TIMED_BREAK_PENALTY_MINUTES*60*1000;
+    totalInactivityPenalties++;
+    document.querySelector('.inactivity-flash-sub').textContent='+'+TIMED_BREAK_PENALTY_MINUTES+' Minutes Added';
+    const flash=document.getElementById('inactivityFlash');
+    flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');
+    updateProgress();
+    resetNoBreaksTimer();
+    return;
+  }
+  const extra=buildPool(1,selected.length);selected.push(...extra);total++;totalInactivityPenalties++;updateProgress();
+  document.querySelector('.inactivity-flash-sub').textContent='+1 Task Added';
   const flash=document.getElementById('inactivityFlash');
   flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');
   resetNoBreaksTimer();
@@ -716,25 +1143,43 @@ function triggerInactivity(){
 
 function nextText(){
   if(!document.getElementById('nextBtn').classList.contains('ready'))return;
+  if(sessionMode==='timed'&&Date.now()>=timedDeadline){endGame();return;}
   if(modes.nobreaks)resetNoBreaksTimer();
   const te=(Date.now()-taskStartTime)/1000/60;
   const wc=selected[current].content.split(' ').length;
   quizTaskWpm=te>0?Math.round(wc/te):0;
   if(modes.quiz)showQuiz();
   else{
-    taskWpms.push(quizTaskWpm);totalErrors+=taskErrors;current++;updateProgress();
-    if(current>=total)endGame();else loadText();
+    taskWpms.push(quizTaskWpm);totalErrors+=taskErrors;current++;
+    if(sessionMode==='timed'){
+      selected.push(...buildPool(1,current));
+      updateProgress();
+      if(Date.now()>=timedDeadline)endGame();else loadText();
+    }else{
+      updateProgress();
+      if(current>=total)endGame();else loadText();
+    }
   }
 }
 
 // ── MULTIPLE CHOICE QUIZ ──
 function showQuiz(){
   // Pause No Breaks while the player is on the quiz screen
-  if(modes.nobreaks&&noBreaksTimer){clearTimeout(noBreaksTimer);noBreaksTimer=null;}
-  totalQuizShown++;
+  pauseNoBreaksTimer();
   const label=selected[current].label;
-  const questions=quizLookup[label];
-  if(!questions||questions.length===0){advanceAfterQuiz();return;}
+  let questions=quizLookup[label];
+  if(!questions||questions.length===0){
+    if(!customLineTexts.length){advanceAfterQuiz();return;}
+    const correct=selected[current].content;
+    const incorrect=shuffleArray(customLineTexts.filter(line=>line!==correct)).slice(0,3);
+    const fallbacks=['A different custom line','An unselected passage','Another line from the session'];
+    for(const fallback of fallbacks){
+      if(incorrect.length>=3)break;
+      if(fallback!==correct&&!incorrect.includes(fallback))incorrect.push(fallback);
+    }
+    questions=[{question:'Which line did you just complete?',correct,incorrect}];
+  }
+  totalQuizShown++;
 
   const q=questions[Math.floor(Math.random()*questions.length)];
   const answers=[
@@ -759,7 +1204,8 @@ function showQuiz(){
 
   document.getElementById('quizFeedback').textContent='';
   document.getElementById('quizFeedback').className='quiz-feedback';
-  document.getElementById('quizCounter').textContent='Quiz '+totalQuizShown+' · Task '+(current+1)+' of '+total;
+  const taskCounter=sessionMode==='timed'?'Task '+(current+1):'Task '+(current+1)+' of '+total;
+  document.getElementById('quizCounter').textContent='Quiz '+totalQuizShown+' · '+taskCounter;
 
   quizAnswered=false;
 
@@ -806,11 +1252,11 @@ function selectAnswer(btn,isCorrect){
   if(isCorrect){
     totalQuizPassed++;
     fb.className='quiz-feedback right';fb.textContent='✓ Correct!';
-    setTimeout(()=>{if(modes.nobreaks)resetNoBreaksTimer();advanceAfterQuiz();},900);
+    setTimeout(()=>{if(sessionEnded)return;if(modes.nobreaks)resetNoBreaksTimer();advanceAfterQuiz();},900);
   }else{
     totalQuizWrongAttempts++;
     fb.className='quiz-feedback wrong';fb.textContent='✗ Incorrect — returning to task.';
-    setTimeout(()=>{switchScreen('play');loadText();},2200);
+    setTimeout(()=>{if(!sessionEnded){switchScreen('play');loadText();}},2200);
   }
 }
 
@@ -827,66 +1273,128 @@ function quizAutoFail(){
   totalQuizWrongAttempts++;
   const fb=document.getElementById('quizFeedback');
   fb.className='quiz-feedback wrong';fb.textContent="⏱ Time's up — returning to task.";
-  setTimeout(()=>{switchScreen('play');loadText();},2200);
+  setTimeout(()=>{if(!sessionEnded){switchScreen('play');loadText();}},2200);
 }
 
 function advanceAfterQuiz(){
-  taskWpms.push(quizTaskWpm);totalErrors+=taskErrors;current++;updateProgress();
-  if(current>=total)endGame();else{switchScreen('play');loadText();}
+  if(sessionEnded)return;
+  taskWpms.push(quizTaskWpm);totalErrors+=taskErrors;current++;
+  if(sessionMode==='timed'){
+    selected.push(...buildPool(1,current));
+    updateProgress();
+    if(Date.now()>=timedDeadline)endGame();else{switchScreen('play');loadText();}
+  }else{
+    updateProgress();
+    if(current>=total)endGame();else{switchScreen('play');loadText();}
+  }
 }
 
 function updateProgress(){
+  if(sessionMode==='timed'&&timedRequiredMs>0){
+    const elapsed=Math.max(0,Date.now()-startTime);
+    const pct=Math.min(100,(elapsed/timedRequiredMs)*100);
+    document.getElementById('progressFill').style.width=pct+'%';
+    document.getElementById('progressText').innerText=current+' completed';
+    return;
+  }
   const pct=(current/total)*100;
   document.getElementById('progressFill').style.width=pct+'%';
   document.getElementById('progressText').innerText=current+' / '+total;
 }
 
+function formatClock(ms){
+  const seconds=Math.max(0,Math.ceil(ms/1000));
+  const h=String(Math.floor(seconds/3600)).padStart(2,'0');
+  const m=String(Math.floor((seconds%3600)/60)).padStart(2,'0');
+  const s=String(seconds%60).padStart(2,'0');
+  return`${h}:${m}:${s}`;
+}
+
 function startTimer(){
+  if(timerInterval)clearInterval(timerInterval);
   timerInterval=setInterval(()=>{
-    const elapsed=Math.floor((Date.now()-startTime)/1000);
-    const h=String(Math.floor(elapsed/3600)).padStart(2,'0');
-    const m=String(Math.floor((elapsed%3600)/60)).padStart(2,'0');
-    const s=String(elapsed%60).padStart(2,'0');
-    document.getElementById('timer').innerText=`${h}:${m}:${s}`;
-  },1000);
+    if(sessionMode==='timed'){
+      const remaining=timedDeadline-Date.now();
+      document.getElementById('timer').innerText=formatClock(remaining);
+      updateProgress();
+      if(remaining<=0)endGame();
+    }else{
+      document.getElementById('timer').innerText=formatClock(Date.now()-startTime);
+      updateProgress();
+    }
+  },250);
 }
 
 function endGame(){
+  if(sessionEnded)return;
+  sessionEnded=true;
   clearInterval(timerInterval);
-  if(noBreaksTimer){clearTimeout(noBreaksTimer);noBreaksTimer=null;}
-  const elapsed=document.getElementById('timer').innerText;
+  pauseNoBreaksTimer();
+  clearQuizCountdown();
+  quizAnswered=true;
+  const elapsed=sessionMode==='timed'?formatClock(Date.now()-startTime):document.getElementById('timer').innerText;
   const avgWpm=taskWpms.length>0?Math.round(taskWpms.reduce((a,b)=>a+b,0)/taskWpms.length):0;
   const id=Math.floor(100000000+Math.random()*900000000);
   document.getElementById('endTime').innerText=elapsed;
   document.getElementById('endWpm').innerText=avgWpm;
   document.getElementById('endErrors').innerText=totalErrors;
-  document.getElementById('endTasks').innerText=total;
+  document.getElementById('endTasks').innerText=current;
   document.getElementById('endId').innerText='Session ID: '+id;
-  let subtitle=total+' text'+(total!==1?'s':'')+' completed';
-  if((modes.punishment||modes.punishmentPlus)&&totalPunishments>0){
+  let subtitle=sessionMode==='timed'
+    ? 'Timed session · '+current+' text'+(current!==1?'s':'')+' completed'
+    : total+' text'+(total!==1?'s':'')+' completed';
+if((modes.punishment||modes.punishmentPlus)&&totalPunishments>0){
     const rw=modes.punishmentPlus?'task reset':'sentence reset';
     subtitle+=' · '+totalPunishments+' '+rw+(totalPunishments!==1?'s':'')+' triggered';
-  }
+    if(sessionMode==='timed'&&totalPunishmentTimeMs>0)
+      subtitle+=' (+'+Math.round(totalPunishmentTimeMs/60000)+' min added)';
+}
   if(modes.nobreaks&&totalInactivityPenalties>0)
-    subtitle+=' · '+totalInactivityPenalties+' inactivity penalt'+(totalInactivityPenalties!==1?'ies':'y')+' added';
+    subtitle+=sessionMode==='timed'
+      ? ' · '+(totalInactivityPenalties*TIMED_BREAK_PENALTY_MINUTES)+' penalty minutes added'
+      : ' · '+totalInactivityPenalties+' inactivity penalt'+(totalInactivityPenalties!==1?'ies':'y')+' added';
+  if(customLineTexts.length)subtitle+=' · custom lines';
   document.getElementById('endSubtitle').innerText=subtitle;
-  document.getElementById('endTextList').innerText=selected.map(t=>t.label).join(' · ');
+  const importedSummary=document.getElementById('importedSettingsSummary');
+  const importedCodeField=document.getElementById('importedSettingsCodeEnd');
+  if(importedSettingsCode){
+    importedSummary.classList.remove('hidden');
+    importedCodeField.value=importedSettingsCode;
+  }else{
+    importedSummary.classList.add('hidden');
+    importedCodeField.value='';
+  }
+  const completedTexts=selected.slice(0,current);
+  const endTextItems=customLineTexts.length
+    ? [...new Set(completedTexts.map(t=>t.content))]
+    : completedTexts.map(t=>t.label);
+  document.getElementById('endTextList').innerText=endTextItems.join(' · ')||'No complete texts';
   const ml=document.getElementById('endModesList');ml.innerHTML='';
   const am=Object.entries(modes).filter(([,v])=>v);
-  if(am.length===0){
+  let badgeCount=0;
+  const addBadge=(name,label)=>{
+    const badge=document.createElement('span');
+    badge.className='mode-badge '+name;
+    badge.innerHTML=`<span class="mode-badge-dot"></span>${label}`;
+    ml.appendChild(badge);badgeCount++;
+  };
+  if(sessionMode==='timed')
+    addBadge('timed','Timed · '+formatClock(timedRequiredMs)+' target');
+  if(customLineTexts.length)
+    addBadge('custom','Custom Lines');
+  if(am.length===0&&!badgeCount){
     ml.innerHTML='<span class="mode-badge standard"><span class="mode-badge-dot"></span>Standard</span>';
   }else{
     am.forEach(([name])=>{
-      const badge=document.createElement('span');
-      badge.className='mode-badge '+name;
       let label=name.charAt(0).toUpperCase()+name.slice(1)+' Mode';
       if(name==='punishment')label='Punishments'+(totalPunishments>0?' · '+totalPunishments+' sentence reset'+(totalPunishments!==1?'s':''):'');
       if(name==='punishmentPlus')label='Punishments+'+(totalPunishments>0?' · '+totalPunishments+' task reset'+(totalPunishments!==1?'s':''):'');
       if(name==='slow')label='Slow Mode · 1 key/sec';
-      if(name==='nobreaks')label='No Breaks'+(totalInactivityPenalties>0?' · +'+totalInactivityPenalties+' task'+(totalInactivityPenalties!==1?'s':''):'');
+      if(name==='nobreaks')label=sessionMode==='timed'
+        ? 'No Breaks'+(totalInactivityPenalties>0?' · +'+(totalInactivityPenalties*TIMED_BREAK_PENALTY_MINUTES)+' min':'')
+        : 'No Breaks'+(totalInactivityPenalties>0?' · +'+totalInactivityPenalties+' task'+(totalInactivityPenalties!==1?'s':''):'');
       if(name==='quiz')label='Quiz Mode · '+totalQuizPassed+'/'+totalQuizShown+' Correct';
-      badge.innerHTML=`<span class="mode-badge-dot"></span>${label}`;
-      ml.appendChild(badge);
+      addBadge(name,label);
     });
   }
   switchScreen('end');
@@ -894,6 +1402,7 @@ function endGame(){
 
 function restartGame(){
   document.getElementById('timer').innerText='00:00:00';
+  sessionEnded=false;
   updateProgress();switchScreen('start');
 }
 </script>
