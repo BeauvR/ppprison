@@ -94,7 +94,7 @@ body::before {
 .mode-option:hover { border-color: var(--border-strong); background: rgba(255,77,166,0.05); }
 .mode-option.selected { border-color: var(--pink); background: var(--pink-glow); }
 .mode-option.disabled { opacity: 0.35; pointer-events: none; }
-.mode-option.locked { cursor: not-allowed; pointer-events: none; }
+.mode-option.locked { cursor: not-allowed; }
 .mode-checkbox { width: 18px; height: 18px; border: 1.5px solid var(--border-strong); border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
 .mode-option.selected .mode-checkbox { background: var(--pink); border-color: var(--pink); }
 .mode-checkbox::after { content: ''; width: 5px; height: 9px; border: 2px solid #000; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-1px); opacity: 0; transition: opacity 0.1s; }
@@ -791,7 +791,7 @@ function importSettings(settings = null){
     document.getElementById('timedMinutes').value=payload.timedMinutes;
     document.getElementById('useCustomLines').checked=payload.useCustomLines;
     document.getElementById('customLines').value=payload.customLines;
-    SETTINGS_MODE_NAMES.forEach(name=>modes[name]=payload.modes[name]);
+    SETTINGS_MODE_NAMES.forEach(name=>setMode(name,payload.modes[name]));
     selectSessionMode(payload.sessionMode);
     toggleCustomLines();
     refreshModeLocks();
@@ -805,8 +805,27 @@ function importSettings(settings = null){
   }
 }
 
+function resetToDefaultState(){
+  document.getElementById('taskCount').value=5;
+  document.getElementById('timedHours').value=0;
+  document.getElementById('timedMinutes').value=30;
+  document.getElementById('useCustomLines').checked=false;
+  document.getElementById('customLines').value='';
+  SETTINGS_MODE_NAMES.forEach(name=>setMode(name,false));
+  sessionMode='basic';
+  selectSessionMode('basic');
+  toggleCustomLines();
+  refreshModeLocks();
+  document.getElementById('settingsCodeOutput').value='';
+  document.getElementById('settingsImportInput').value='';
+  document.getElementById('settingsExportPanel').classList.add('hidden');
+  document.getElementById('settingsImportPanel').classList.add('hidden');
+  setSettingsMessage('');
+}
+
 let params = new URLSearchParams(document.location.search);
 let settings = params.get("settings");
+resetToDefaultState();
 if (settings && typeof settings === 'string') {
   importSettings(settings);
   document.querySelector('.settings-tools').style.display = 'none';
