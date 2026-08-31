@@ -359,10 +359,10 @@ body::before {
           <input type="checkbox" id="useCustomLines" class="visually-hidden" tabindex="-1" aria-hidden="true">
         </div>
         <div id="customLinesPanel" class="custom-lines-panel hidden">
+          <div id="customLinesLockedMessage" style="display:none;" class="setting-note">Perfection has assigned you custom lines.</div>
           <textarea id="customLines" rows="4" maxlength="50000" placeholder="Paste or type one line per entry..."></textarea>
           <p class="setting-note">Each non-empty line replaces a built-in paragraph. Lines repeat in order when the session needs more.</p>
         </div>
-      </div>
       <div class="settings-tools">
         <div class="settings-actions">
           <button class="btn-secondary" type="button" onclick="exportSettings()">Export Settings</button>
@@ -684,6 +684,15 @@ function toggleCustomLines(){
     quizOption.removeAttribute('aria-disabled');
   }
   if(enabled)document.getElementById('customLines').focus();
+  updateCustomLinesVisibility();
+}
+
+function updateCustomLinesVisibility(){
+  const enabled=document.getElementById('useCustomLines').checked;
+  const hideContent=importedSettingsLocked&&enabled;
+  document.getElementById('customLines').style.display=hideContent?'none':'';
+  document.getElementById('customLinesPanel').querySelector('.setting-note:not(#customLinesLockedMessage)').style.display=hideContent?'none':'';
+  document.getElementById('customLinesLockedMessage').style.display=hideContent?'':'none';
 }
 
 function toggleCustomLinesMode(){
@@ -831,6 +840,7 @@ function lockImportedSettings(){
     control.classList.add('locked');
     control.setAttribute('aria-disabled','true');
   });
+  updateCustomLinesVisibility();
 }
 
 function unlockImportedSettings(){
@@ -843,6 +853,7 @@ function unlockImportedSettings(){
   selectSessionMode(sessionMode);
   toggleCustomLines();
   refreshModeLocks();
+  updateCustomLinesVisibility();
 }
 
 function clearImportedSettings(){
@@ -881,7 +892,7 @@ function resetToDefaultState(){
   document.getElementById('taskCount').value=5;
   document.getElementById('timedHours').value=0;
   document.getElementById('timedMinutes').value=30;
-    setCustomLinesChecked(false);
+  setCustomLinesChecked(false);
   document.getElementById('customLines').value='';
   SETTINGS_MODE_NAMES.forEach(name=>setMode(name,false));
   sessionMode='basic';
@@ -893,6 +904,7 @@ function resetToDefaultState(){
   document.getElementById('settingsExportPanel').classList.add('hidden');
   document.getElementById('settingsImportPanel').classList.add('hidden');
   setSettingsMessage('');
+  updateCustomLinesVisibility();
 }
 
 let params = new URLSearchParams(document.location.search);
