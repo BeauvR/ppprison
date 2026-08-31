@@ -989,7 +989,7 @@ totalPunishmentTimeMs=0;
   clearQuizCountdown();
   if(noBreaksTimer){clearTimeout(noBreaksTimer);noBreaksTimer=null;}
   inactivityDeadline=0;
-  noBreaksRecoveryActive=false;
+  noBreaksRecoveryActive=true;
   startTime=Date.now();
   timedDeadline=sessionMode==='timed'?startTime+timedRequiredMs:0;
   document.getElementById('timer').innerText=sessionMode==='timed'?formatClock(timedRequiredMs):'00:00:00';
