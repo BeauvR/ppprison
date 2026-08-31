@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <title>WriteForPerfection</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -56,6 +56,7 @@ body::before {
 .session-tab.active { background: var(--pink-glow); border-color: var(--border-strong); color: var(--pink); }
 .session-settings { display: flex; flex-direction: column; gap: 10px; }
 .session-settings.hidden, .custom-lines-panel.hidden { display: none; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .session-settings > p { margin: 0; }
 .duration-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .duration-field { display: flex; flex-direction: column; gap: 7px; }
@@ -108,6 +109,9 @@ body::before {
 .mode-hint-bubble { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #1e1b24; border: 1px solid var(--border-strong); border-radius: 8px; padding: 9px 12px; width: 220px; font-size: 0.75rem; color: var(--text); line-height: 1.5; pointer-events: none; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
 .mode-hint-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--border-strong); }
 .mode-hint:hover .mode-hint-bubble { display: block; }
+.hint-timed { display: none; }
+.session-timed .hint-basic { display: none; }
+.session-timed .hint-timed { display: inline; }
 .btn-primary { width: 100%; padding: 13px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; letter-spacing: 0.08em; cursor: pointer; background: var(--pink); color: #000; border: none; border-radius: 10px; transition: opacity 0.15s, transform 0.1s; touch-action: manipulation; min-height: 44px; }
 .btn-primary:hover { opacity: 0.88; }
 .btn-primary:active { transform: scale(0.98); }
@@ -128,7 +132,24 @@ body::before {
 .typing-area { width: 100%; max-width: 800px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.75rem 2rem; }
 #textDisplay { font-family: 'DM Mono', monospace; font-size: 1.05rem; line-height: 1.85; letter-spacing: 0.01em; word-break: break-word; }
 @media (max-width: 600px) {
-  .typing-area { --line-h: calc(1.05rem * 1.85); height: calc(var(--line-h) * 3 + 1.75rem * 2); overflow-y: auto; }
+  body:has(#play.active) { overflow: hidden; height: 100dvh; }
+  #play {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding: 0.75rem 1rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    gap: 0.6rem;
+  }
+  .play-header, .progress-wrap, .live-stats, .text-label, .input-wrap, .next-btn { flex-shrink: 0; }
+  .typing-area {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 1rem 1.25rem;
+  }
   #textDisplay { position: relative; }
 }
 .word { color: var(--untyped); transition: color 0.08s; }
@@ -272,12 +293,53 @@ body::before {
         </div>
         <p class="setting-note">Timed sessions start with No Breaks enabled. A pause longer than 3 seconds adds 3 minutes to the finish time.</p>
       </div>
+ <div class="mode-option" id="modePunishment" onclick="toggleMode('punishment')">
+  <div class="mode-checkbox"></div>
+  <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Punishments</div>
+  <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">
+    <span class="hint-basic">Typing errors cause the current sentence to reset.</span>
+    <span class="hint-timed">Typing errors add 1 minute to your session time.</span>
+  </div></span></div></div>
+</div>
+<div class="mode-option" id="modePunishmentPlus" onclick="toggleMode('punishmentPlus')">
+  <div class="mode-checkbox"></div>
+  <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Punishments+</div>
+  <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">
+    <span class="hint-basic">Typing errors cause the entire current task to reset.</span>
+    <span class="hint-timed">Typing errors reset the current task and add 3 minutes to your session time.</span>
+  </div></span></div></div>
+</div>
+<div class="mode-option" id="modeSlow" onclick="toggleMode('slow')">
+  <div class="mode-checkbox"></div>
+  <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Slow Mode</div>
+  <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">
+    <span class="hint-basic">Key inputs are limited to one per second.</span>
+    <span class="hint-timed">Key inputs are limited to one per second.</span>
+  </div></span></div></div>
+</div>
+<div class="mode-option" id="modeNobreaks" onclick="toggleMode('nobreaks')">
+  <div class="mode-checkbox"></div>
+  <div class="mode-text"><div class="mode-name-row"><div class="mode-name">No Breaks</div>
+  <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">
+    <span class="hint-basic">An additional task is added after 4 seconds of inactivity.</span>
+    <span class="hint-timed">A 1 minute penalty is added after 4 seconds of inactivity.</span>
+  </div></span></div></div>
+</div>
+<div class="mode-option" id="modeQuiz" onclick="toggleMode('quiz')">
+  <div class="mode-checkbox"></div>
+  <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Quiz</div>
+  <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">
+    <span class="hint-basic">After each task, answer a multiple-choice question about the text within 10 seconds. Wrong answer or timeout returns you to retype the task.</span>
+    <span class="hint-timed">Not available in Timed mode.</span>
+  </div></span></div></div>
+</div>
       <div class="custom-lines-section">
-        <label class="custom-line-toggle" for="useCustomLines">
-          <input type="checkbox" id="useCustomLines" checked onchange="toggleCustomLines()">
-          <span>Use custom lines</span>
-        </label>
-        <div id="customLinesPanel" class="custom-lines-panel">
+        <div class="mode-option" id="modeCustomLines" onclick="toggleCustomLinesMode()">
+          <div class="mode-checkbox"></div>
+          <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Use Custom Lines</div></div></div>
+          <input type="checkbox" id="useCustomLines" class="visually-hidden" tabindex="-1" aria-hidden="true">
+        </div>
+        <div id="customLinesPanel" class="custom-lines-panel hidden">
           <textarea id="customLines" rows="4" maxlength="50000" placeholder="Paste or type one line per entry..."></textarea>
           <p class="setting-note">Each non-empty line replaces a built-in paragraph. Lines repeat in order when the session needs more.</p>
         </div>
@@ -300,33 +362,6 @@ body::before {
           <div id="settingsMessage" class="settings-message"></div>
         </div>
       </div>
-      <div class="modes-section">
-        <div class="modes-label">Optional modes</div>
-        <div class="mode-option" id="modePunishment" onclick="toggleMode('punishment')">
-          <div class="mode-checkbox"></div>
-          <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Punishments</div>
-          <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">Typing errors cause the current sentence to reset.</div></span></div></div>
-        </div>
-        <div class="mode-option" id="modePunishmentPlus" onclick="toggleMode('punishmentPlus')">
-          <div class="mode-checkbox"></div>
-          <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Punishments+</div>
-          <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">Typing errors cause the entire current task to reset.</div></span></div></div>
-        </div>
-        <div class="mode-option" id="modeSlow" onclick="toggleMode('slow')">
-          <div class="mode-checkbox"></div>
-          <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Slow Mode</div>
-          <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">Key inputs are limited to one per second.</div></span></div></div>
-        </div>
-        <div class="mode-option" id="modeNobreaks" onclick="toggleMode('nobreaks')">
-          <div class="mode-checkbox"></div>
-          <div class="mode-text"><div class="mode-name-row"><div class="mode-name">No Breaks</div>
-          <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">In Basic, an additional task is added after 5 seconds. In Timed, a 3-minute penalty is added after 3 seconds.</div></span></div></div>
-        </div>
-        <div class="mode-option" id="modeQuiz" onclick="toggleMode('quiz')">
-          <div class="mode-checkbox"></div>
-          <div class="mode-text"><div class="mode-name-row"><div class="mode-name">Quiz</div>
-          <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">After each task, answer a multiple-choice question about the text within 10 seconds. Wrong answer or timeout returns you to retype the task.</div></span></div></div>
-        </div>
       </div>
       <button class="btn-primary" onclick="startGame()">Begin Session</button>
     </div>
@@ -442,6 +477,10 @@ document.addEventListener('visibilitychange',()=>{if(modes.nobreaks)checkInactiv
 window.addEventListener('focus',()=>{if(modes.nobreaks)checkInactivity();});
 window.addEventListener('pageshow',()=>{if(modes.nobreaks)checkInactivity();});
 
+document.getElementById('inputBox').addEventListener('focus',()=>{
+  if(window.innerWidth<=600)window.scrollTo(0,0);
+});
+
 const ALL_TEXTS=[
   {label:"Simone de Beauvoir",content:`Simone de Beauvoir was a French writer, feminist, social theorist, and existential philosopher. She is best known for her groundbreaking ideas surrounding feminism. In her 1949 book "The Second Sex", Beauvoir asserted that women are as capable of choice as men, and thus can choose to elevate themselves, moving beyond the "immanence" to which they were previously resigned and reaching "transcendence", a position in which one takes responsibility for oneself and the world, where one chooses one's freedom. She wrote, "One is not born, but rather becomes, a woman... her wings are cut and then she is blamed for not knowing how to fly."`},
   {label:"RACK",content:`RACK stands for Risk Aware Consensual Kink. Rather than prohibit injury, RACK encourages risk awareness. To be risk aware within BDSM means participants acknowledge that their sexual activities may have physical risks like bruises or burns, mental risks like stress and anguish, as well as emotional risks like humiliation. Beyond risk awareness, the C in RACK stands for consensual. For sex to be consensual, all parties involved need to enthusiastically agree, in a comfortable environment safe from coercion, to all activities that are going to take place. There should be a conversation prior to sex in which every individual establishes their boundaries and agrees upon a safeword.`},
@@ -552,8 +591,8 @@ QUIZ_DATA.forEach(e=>{quizLookup[e.label]=e.questions;});
 
 // ── MODES ──
 const modes={punishment:false,punishmentPlus:false,slow:false,nobreaks:false,quiz:false};
-const TIMED_BREAK_GRACE_MS=3000;
-const TIMED_BREAK_PENALTY_MINUTES=3;
+const TIMED_BREAK_GRACE_MS=4000;
+const TIMED_BREAK_PENALTY_MINUTES=1;
 const TIMED_PUNISHMENT_PENALTY_MINUTES=1;
 const TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES=3;
 const SLOW_KEY_INTERVAL_MS=1000;
@@ -591,22 +630,25 @@ function refreshModeLocks(){
 function selectSessionMode(name){
   sessionMode=name;
   const basic=name==='basic';
+  document.getElementById('start').classList.toggle('session-timed',!basic);
   document.getElementById('tabBasic').classList.toggle('active',basic);
   document.getElementById('tabTimed').classList.toggle('active',!basic);
   document.getElementById('tabBasic').setAttribute('aria-selected',basic?'true':'false');
   document.getElementById('tabTimed').setAttribute('aria-selected',basic?'false':'true');
   document.getElementById('basicSettings').classList.toggle('hidden',!basic);
   document.getElementById('timedSettings').classList.toggle('hidden',basic);
+
+  SETTINGS_MODE_NAMES.forEach(name=>setMode(name,false));
+
   const noBreaksOption=document.getElementById('modeNobreaks');
   if(!basic){
-    if(!modes.nobreaks)setMode('nobreaks',true);
+    setMode('nobreaks',true);
     noBreaksOption.classList.add('locked');
     noBreaksOption.setAttribute('aria-disabled','true');
   }else{
     noBreaksOption.classList.remove('locked');
     noBreaksOption.removeAttribute('aria-disabled');
   }
-  if(!basic&&modes.quiz)setMode('quiz',false);
   refreshModeLocks();
 }
 
@@ -623,6 +665,17 @@ function toggleCustomLines(){
     quizOption.removeAttribute('aria-disabled');
   }
   if(enabled)document.getElementById('customLines').focus();
+}
+
+function toggleCustomLinesMode(){
+  if(importedSettingsLocked)return;
+  setCustomLinesChecked(!document.getElementById('useCustomLines').checked);
+}
+
+function setCustomLinesChecked(value){
+  document.getElementById('useCustomLines').checked=value;
+  document.getElementById('modeCustomLines').classList.toggle('selected',value);
+  toggleCustomLines();
 }
 
 // ── STATE ──
@@ -789,7 +842,7 @@ function importSettings(settings = null){
     document.getElementById('taskCount').value=payload.taskCount;
     document.getElementById('timedHours').value=payload.timedHours;
     document.getElementById('timedMinutes').value=payload.timedMinutes;
-    document.getElementById('useCustomLines').checked=payload.useCustomLines;
+        setCustomLinesChecked(payload.useCustomLines);
     document.getElementById('customLines').value=payload.customLines;
     SETTINGS_MODE_NAMES.forEach(name=>setMode(name,payload.modes[name]));
     selectSessionMode(payload.sessionMode);
@@ -809,7 +862,7 @@ function resetToDefaultState(){
   document.getElementById('taskCount').value=5;
   document.getElementById('timedHours').value=0;
   document.getElementById('timedMinutes').value=30;
-  document.getElementById('useCustomLines').checked=false;
+    setCustomLinesChecked(false);
   document.getElementById('customLines').value='';
   SETTINGS_MODE_NAMES.forEach(name=>setMode(name,false));
   sessionMode='basic';
@@ -982,10 +1035,14 @@ function handleKey(e){
 
 function scrollToCurrentWord(){
   const container=document.querySelector('.typing-area');
+  if(!container)return;
   if(window.innerWidth>600){container.scrollTop=0;return;}
   const active=document.querySelector('.word.cursor-on')||document.querySelector('.word.incorrect')||null;
   if(!active)return;
-  container.scrollTo({top:active.offsetTop,behavior:'smooth'});
+  const containerRect=container.getBoundingClientRect();
+  const activeRect=active.getBoundingClientRect();
+  const targetTop=container.scrollTop+(activeRect.top-containerRect.top)-14;
+  container.scrollTo({top:Math.max(0,targetTop),behavior:'smooth'});
 }
 
 function normalise(str){
@@ -1136,8 +1193,8 @@ function pauseNoBreaksTimer(){
 function resetNoBreaksTimer(){
   pauseNoBreaksTimer();
   timedBreakTriggered=false;
-  inactivityDeadline=Date.now()+(sessionMode==='timed'?TIMED_BREAK_GRACE_MS:5000);
-  noBreaksTimer=setTimeout(checkInactivity,sessionMode==='timed'?TIMED_BREAK_GRACE_MS:5000);
+  inactivityDeadline=Date.now()+(sessionMode==='timed'?TIMED_BREAK_GRACE_MS:4000);
+  noBreaksTimer=setTimeout(checkInactivity,sessionMode==='timed'?TIMED_BREAK_GRACE_MS:4000);
 }
 
 function checkInactivity(){
