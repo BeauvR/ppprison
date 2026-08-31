@@ -274,10 +274,10 @@ body::before {
       </div>
       <div class="custom-lines-section">
         <label class="custom-line-toggle" for="useCustomLines">
-          <input type="checkbox" id="useCustomLines" onchange="toggleCustomLines()">
+          <input type="checkbox" id="useCustomLines" checked onchange="toggleCustomLines()">
           <span>Use custom lines</span>
         </label>
-        <div id="customLinesPanel" class="custom-lines-panel hidden">
+        <div id="customLinesPanel" class="custom-lines-panel">
           <textarea id="customLines" rows="4" maxlength="50000" placeholder="Paste or type one line per entry..."></textarea>
           <p class="setting-note">Each non-empty line replaces a built-in paragraph. Lines repeat in order when the session needs more.</p>
         </div>
@@ -719,7 +719,10 @@ function setSettingsMessage(message,type=''){
 
 function exportSettings(){
   const code=importedSettingsCode||encodeSettingsCode(getSettingsPayload());
-  document.getElementById('settingsCodeOutput').value=code;
+  const base = document.location.href.split('?')[0];
+  const link = base + '?settings=' + code
+
+  document.getElementById('settingsCodeOutput').value= link.length < 4000 ? link : code;
   document.getElementById('settingsExportPanel').classList.remove('hidden');
   setSettingsMessage('Settings code generated.','success');
 }
@@ -778,9 +781,9 @@ function clearImportedSettings(){
   setSettingsMessage('Imported settings cleared. You can edit the configuration again.');
 }
 
-function importSettings(){
+function importSettings(settings = null){
   try{
-    const result=decodeSettingsCode(document.getElementById('settingsImportInput').value);
+    const result=decodeSettingsCode(settings ?? document.getElementById('settingsImportInput').value);
     const payload=result.payload;
     sessionMode=payload.sessionMode;
     document.getElementById('taskCount').value=payload.taskCount;
@@ -800,6 +803,13 @@ function importSettings(){
   }catch(error){
     setSettingsMessage(error.message||'Unable to import that settings code.','error');
   }
+}
+
+let params = new URLSearchParams(document.location.search);
+let settings = params.get("settings");
+if (settings && typeof settings === 'string') {
+  importSettings(settings);
+  document.querySelector('.settings-tools').style.display = 'none';
 }
 
 function clearQuizCountdown(){
