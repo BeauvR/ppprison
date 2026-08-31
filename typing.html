@@ -610,7 +610,9 @@ QUIZ_DATA.forEach(e=>{quizLookup[e.label]=e.questions;});
 
 // ── MODES ──
 const modes={punishment:false,punishmentPlus:false,slow:false,nobreaks:false,quiz:false};
+const BASIC_BREAK_GRACE_MS=4000;
 const TIMED_BREAK_GRACE_MS=4000;
+const NOBREAKS_RECOVERY_GRACE_MS=12000;
 const TIMED_BREAK_PENALTY_MINUTES=1;
 const TIMED_PUNISHMENT_PENALTY_MINUTES=1;
 const TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES=3;
@@ -712,6 +714,7 @@ let taskErrors=0,taskErrorCounted={},totalErrors=0,taskWpms=[];
 let totalPunishments=0,prevInputLength=0,sentenceStartWords=[];
 let slowLastKeyTime=0;
 let noBreaksTimer=null,inactivityDeadline=0,totalInactivityPenalties=0;
+let noBreaksRecoveryActive=false;
 let totalQuizShown=0,totalQuizPassed=0,totalQuizWrongAttempts=0;
 let totalPunishmentTimeMs=0;
 let quizTaskWpm=0,quizCountdownTimer=null,quizCountdownInterval=null,quizAnswered=false;
@@ -986,6 +989,7 @@ totalPunishmentTimeMs=0;
   clearQuizCountdown();
   if(noBreaksTimer){clearTimeout(noBreaksTimer);noBreaksTimer=null;}
   inactivityDeadline=0;
+  noBreaksRecoveryActive=false;
   startTime=Date.now();
   timedDeadline=sessionMode==='timed'?startTime+timedRequiredMs:0;
   document.getElementById('timer').innerText=sessionMode==='timed'?formatClock(timedRequiredMs):'00:00:00';
@@ -1224,8 +1228,10 @@ function pauseNoBreaksTimer(){
 function resetNoBreaksTimer(){
   pauseNoBreaksTimer();
   timedBreakTriggered=false;
-  inactivityDeadline=Date.now()+(sessionMode==='timed'?TIMED_BREAK_GRACE_MS:4000);
-  noBreaksTimer=setTimeout(checkInactivity,sessionMode==='timed'?TIMED_BREAK_GRACE_MS:4000);
+  const grace=noBreaksRecoveryActive?NOBREAKS_RECOVERY_GRACE_MS:(sessionMode==='timed'?TIMED_BREAK_GRACE_MS:BASIC_BREAK_GRACE_MS);
+  noBreaksRecoveryActive=false;
+  inactivityDeadline=Date.now()+grace;
+  noBreaksTimer=setTimeout(checkInactivity,grace);
 }
 
 function checkInactivity(){
@@ -1248,6 +1254,7 @@ function triggerInactivity(){
     const flash=document.getElementById('inactivityFlash');
     flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');
     updateProgress();
+    noBreaksRecoveryActive=true;
     resetNoBreaksTimer();
     return;
   }
@@ -1255,6 +1262,7 @@ function triggerInactivity(){
   document.querySelector('.inactivity-flash-sub').textContent='+1 Task Added';
   const flash=document.getElementById('inactivityFlash');
   flash.classList.remove('show');void flash.offsetWidth;flash.classList.add('show');
+  noBreaksRecoveryActive=true;
   resetNoBreaksTimer();
 }
 
