@@ -138,19 +138,38 @@ body::before {
     min-height: 100dvh;
     max-height: 100dvh;
     overflow: hidden;
-    padding: 0.75rem 1rem;
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    gap: 0.4rem;
   }
   .play-header, .progress-wrap, .live-stats, .text-label, .input-wrap, .next-btn { flex-shrink: 0; }
+
+  .play-header { padding-top: 0; }
+  .play-header .brand { font-size: 1.1rem; line-height: 1; }
+  .play-header .brand br { display: none; }
+  .play-header .brand-sub { display: none; }
+
+  .progress-track { height: 26px; }
+  .progress-label { font-size: 0.65rem; gap: 6px; }
+
+  .live-stats { gap: 6px; }
+  .stat-pill { padding: 4px 8px; }
+  .stat-pill .slabel { font-size: 0.55rem; }
+  .stat-pill .sval { font-size: 0.75rem; }
+
+  .text-label { font-size: 0.6rem; padding-left: 0; }
+
   .typing-area {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem;
   }
-  #textDisplay { position: relative; }
+  #textDisplay { position: relative; font-size: 0.95rem; line-height: 1.7; }
+
+  #inputBox { padding: 10px 14px; }
+  .next-btn { padding: 10px; min-height: 40px; }
 }
 .word { color: var(--untyped); transition: color 0.08s; }
 .word.cursor-on { border-bottom: 2px solid var(--cursor); }
