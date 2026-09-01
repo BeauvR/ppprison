@@ -948,10 +948,10 @@ function importSettings(settings = null){
     document.getElementById('taskCount').value=payload.taskCount;
     document.getElementById('timedHours').value=payload.timedHours;
     document.getElementById('timedMinutes').value=payload.timedMinutes;
-        setCustomLinesChecked(payload.useCustomLines);
+    setCustomLinesChecked(payload.useCustomLines);
     document.getElementById('customLines').value=payload.customLines;
-    SETTINGS_MODE_NAMES.forEach(name=>setMode(name,payload.modes[name]));
     selectSessionMode(payload.sessionMode);
+    SETTINGS_MODE_NAMES.forEach(name=>setMode(name,payload.modes[name]));
     toggleCustomLines();
     refreshModeLocks();
     importedSettingsCode=result.code;
