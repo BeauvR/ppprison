@@ -153,9 +153,9 @@ body::before {
   .progress-label { font-size: 0.65rem; gap: 6px; }
 
   .live-stats { gap: 6px; }
-  .stat-pill { padding: 4px 8px; }
-  .stat-pill .slabel { font-size: 0.55rem; }
-  .stat-pill .sval { font-size: 0.75rem; }
+  .stat-pill { padding: 2px 6px; }
+  .stat-pill .slabel { font-size: 0.5rem; }
+  .stat-pill .sval { font-size: 0.68rem; }
 
   .text-label { font-size: 0.6rem; padding-left: 0; }
 
@@ -169,7 +169,7 @@ body::before {
   #textDisplay { position: relative; font-size: 0.95rem; line-height: 1.7; }
 
   #inputBox { padding: 10px 14px; }
-  .next-btn { padding: 10px; min-height: 40px; }
+  .next-btn { padding: 5px; min-height: 22px; font-size: 0.75rem; }
 }
 .word { color: var(--untyped); transition: color 0.08s; }
 .word.cursor-on { border-bottom: 2px solid var(--cursor); }
@@ -225,11 +225,9 @@ body::before {
 .timeline-label strong { color: var(--text); font-weight: 500; }
 .timeline-chart { width: 100%; min-height: 150px; }
 .timeline-chart svg { display: block; width: 100%; height: 150px; overflow: visible; }
-.timeline-events { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.timeline-event { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); border-radius: 99px; padding: 4px 8px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.61rem; line-height: 1.2; }
-.timeline-event.task { color: var(--pink); border-color: var(--border-strong); }
-.timeline-event.penalty { color: #ffaa33; border-color: rgba(255,165,0,0.35); }
-.timeline-event.error { color: var(--incorrect); border-color: rgba(255,51,85,0.35); }
+.timeline-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 0.63rem; letter-spacing: 0.05em; color: var(--muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .mode-stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .mode-stat-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 0.95rem; min-width: 0; }
 .mode-stat-card h3 { display: flex; align-items: center; gap: 7px; color: var(--text); font-size: 0.82rem; font-weight: 500; margin-bottom: 7px; }
@@ -378,9 +376,14 @@ body::before {
   <div class="mode-checkbox"></div>
   <div class="mode-text"><div class="mode-name-row"><div class="mode-name">No Breaks</div>
   <span class="mode-hint" onclick="event.stopPropagation()">?<div class="mode-hint-bubble">
-    <span class="hint-basic">A 12-second start/recovery grace period reduces to 4 seconds while typing; inactivity adds a task.</span>
-    <span class="hint-timed">A 12-second start/recovery grace period reduces to 4 seconds while typing; inactivity adds 1 minute.</span>
+    <span class="hint-basic">A 12-second start/recovery grace period reduces to your chosen grace period while typing; inactivity adds a task.</span>
+    <span class="hint-timed">A 12-second start/recovery grace period reduces to your chosen grace period while typing; inactivity adds 1 minute.</span>
   </div></span></div></div>
+</div>
+<div id="noBreaksPanel" class="custom-lines-panel hidden">
+  <label for="noBreaksGrace" class="setting-note">Grace period while typing: <strong id="noBreaksGraceLabel">3</strong>s</label>
+  <input type="range" id="noBreaksGrace" min="1" max="10" step="1" value="3" oninput="onNoBreaksGraceInput()" style="width:100%;accent-color:var(--pink);">
+  <p class="setting-note">Applies to pauses while typing, in both Basic and Timed sessions. The fixed 12-second grace period on load-in / after a reset stays the same.</p>
 </div>
 <div class="mode-option" id="modeQuiz" onclick="toggleMode('quiz')">
   <div class="mode-checkbox"></div>
@@ -511,7 +514,7 @@ body::before {
         <div class="timeline-wrap">
           <div class="timeline-label"><strong>Session timeline</strong><span id="timelineMeta">Speed · errors · events</span></div>
           <div id="timelineChart" class="timeline-chart" aria-label="Timeline of speed, errors, and mode events"></div>
-          <div id="timelineEvents" class="timeline-events"></div>
+          <div id="timelineLegend" class="timeline-legend"></div>
         </div>
       </section>
 
@@ -532,8 +535,11 @@ body::before {
       </section>
     </div>
     <div class="end-actions">
-      <button class="btn-proof" type="button" onclick="exportProof()">Export Proof PNG</button>
-      <button class="btn-restart" type="button" onclick="restartGame()">Start New Session</button>
+      <button class="btn-proof" type="button" id="exportProofBtn" onclick="exportProof()">Export Proof PNG</button>
+      <button class="btn-proof" type="button" id="copyProofBtn" onclick="copyProofToClipboard()">Copy Proof Image</button>
+    </div>
+    <div class="end-actions">
+      <button class="btn-restart" type="button" onclick="restartGame()" style="grid-column:1 / -1;">Start New Session</button>
     </div>
     <div id="proofStatus" class="proof-status" role="status" aria-live="polite"></div>
   </div>
@@ -566,6 +572,7 @@ window.addEventListener('pageshow',()=>{if(modes.nobreaks)checkInactivity();});
 document.getElementById('inputBox').addEventListener('focus',()=>{
   if(window.innerWidth<=600)window.scrollTo(0,0);
 });
+
 const ALL_TEXTS=[
   {label:"Simone de Beauvoir",content:`Simone de Beauvoir was a French writer, feminist, social theorist, and existential philosopher. She is best known for her groundbreaking ideas surrounding feminism. In her 1949 book "The Second Sex", Beauvoir asserted that women are as capable of choice as men, and thus can choose to elevate themselves, moving beyond the "immanence" to which they were previously resigned and reaching "transcendence", a position in which one takes responsibility for oneself and the world, where one chooses one's freedom. She wrote, "One is not born, but rather becomes, a woman... her wings are cut and then she is blamed for not knowing how to fly."`},
   {label:"RACK",content:`RACK stands for Risk Aware Consensual Kink. Rather than prohibit injury, RACK encourages risk awareness. To be risk aware within BDSM means participants acknowledge that their sexual activities may have physical risks like bruises or burns, mental risks like stress and anguish, as well as emotional risks like humiliation. Beyond risk awareness, the C in RACK stands for consensual. For sex to be consensual, all parties involved need to enthusiastically agree, in a comfortable environment safe from coercion, to all activities that are going to take place. There should be a conversation prior to sex in which every individual establishes their boundaries and agrees upon a safeword.`},
@@ -670,19 +677,25 @@ const ALL_TEXTS=[
 ];
 const QUIZ_DATA=[{"label": "Simone de Beauvoir", "questions": [{"question": "What groundbreaking book did Simone de Beauvoir publish in 1949?", "correct": "The Second Sex", "incorrect": ["The Feminine Mystique", "A Room of One's Own", "The Female Eunuch"]}, {"question": "According to de Beauvoir, what philosophical concept involves taking responsibility for oneself and the world?", "correct": "Transcendence", "incorrect": ["Immanence", "Existential freedom", "Subjective agency"]}, {"question": "How does de Beauvoir describe women's situation in the quote: 'her wings are cut and then she is blamed for...'?", "correct": "Not knowing how to fly", "incorrect": ["Not reaching the sky", "Not being free", "Not finding her wings"]}]}, {"label": "RACK", "questions": [{"question": "What does the acronym RACK stand for?", "correct": "Risk Aware Consensual Kink", "incorrect": ["Respectful, Affirming, Consensual Kink", "Responsible Adult Consensual Kink", "Risk Acknowledging Consensual Kink"]}, {"question": "Which of the following is listed as a potential mental risk in RACK?", "correct": "Stress and anguish", "incorrect": ["Loss of consciousness", "Permanent injury", "Legal liability"]}, {"question": "According to RACK, what must be established before sexual activity takes place?", "correct": "A conversation about boundaries and a safeword", "incorrect": ["A written legal contract", "A medical assessment", "A third-party witness agreement"]}]}, {"label": "Safe, Sane, Consensual (SSC)", "questions": [{"question": "When did many BDSM practitioners and organisations adopt the SSC motto?", "correct": "Since the 1980s", "incorrect": ["Since the 1960s", "Since the 1990s", "Since the 1970s"]}, {"question": "What does the 'S' in SSC stand for?", "correct": "Safe, Sane", "incorrect": ["Sexual, Social", "Secure, Sane", "Safe, Social"]}, {"question": "According to SSC, what makes a clear legal and ethical distinction between BDSM and crimes like sexual assault?", "correct": "Mutual consent", "incorrect": ["Physical safety", "Mental soundness", "Written agreements"]}]}, {"label": "Wollstonecraft", "questions": [{"question": "According to Wollstonecraft, what is the true foundation of virtue?", "correct": "The improvement of reason", "incorrect": ["Moral education", "Religious faith", "Social conformity"]}, {"question": "What does Wollstonecraft say is weakened when women are educated only to please others?", "correct": "Their independence", "incorrect": ["Their creativity", "Their social bonds", "Their physical health"]}, {"question": "What claim does Wollstonecraft make about the mind?", "correct": "The mind has no gender", "incorrect": ["The mind is shaped by society", "The mind transcends the body", "The mind is equal in all people"]}]}, {"label": "Sojourner Truth", "questions": [{"question": "What repeated rhetorical question does Sojourner Truth use in her speech?", "correct": "Ain't I a woman?", "incorrect": ["Am I not free?", "Do I not bleed?", "Have I no rights?"]}, {"question": "What kinds of labour does Sojourner Truth describe performing?", "correct": "Ploughing, planting, and gathering into barns", "incorrect": ["Weaving, sewing, and cooking", "Teaching, nursing, and cleaning", "Building, carrying, and harvesting"]}, {"question": "Who does Truth say heard her cry out with a mother's grief?", "correct": "Only Jesus", "incorrect": ["No one at all", "Her fellow enslaved people", "Her children"]}]}, {"label": "J. S. Mill", "questions": [{"question": "What does Mill say the subordination of women is a result of?", "correct": "Social arrangements accepted without question", "incorrect": ["Natural biological differences", "Historical conquest", "Religious doctrine"]}, {"question": "According to Mill, equality is not only a matter of justice but also of what?", "correct": "Utility", "incorrect": ["Morality", "Progress", "Compassion"]}, {"question": "What principle does Mill say should replace the existing social relations between the sexes?", "correct": "A principle of perfect equality", "incorrect": ["A principle of mutual respect", "A principle of natural rights", "A principle of social harmony"]}]}, {"label": "Feminism", "questions": [{"question": "What is described as the one overarching goal of feminism?", "correct": "Pushing societies towards equality for all women and girls", "incorrect": ["Achieving legal parity with men", "Eliminating gender roles entirely", "Empowering women in the workplace"]}, {"question": "Why do some refer to feminism as 'feminisms' (plural)?", "correct": "Because it takes different shapes", "incorrect": ["Because there are different waves", "Because it spans different countries", "Because it includes men and women"]}, {"question": "According to this definition, what is feminism at its core?", "correct": "The belief that everyone should have equal rights and opportunities regardless of gender", "incorrect": ["The belief that women are disadvantaged and must be uplifted", "The movement to remove male privilege from institutions", "The philosophy that gender is a social construct"]}]}, {"label": "bell hooks", "questions": [{"question": "What was bell hooks's real name?", "correct": "Gloria Jean Watkins", "incorrect": ["Angela Gloria Watkins", "Gloria Jean Bell", "Jean Gloria Hooks"]}, {"question": "At which college was bell hooks a Distinguished Professor in Residence?", "correct": "Berea College", "incorrect": ["Columbia University", "Howard University", "Spelman College"]}, {"question": "What modern concept is bell hooks's work considered foundational to?", "correct": "Intersectionality", "incorrect": ["Postcolonial theory", "Queer theory", "Critical race theory"]}]}, {"label": "Intersectionality", "questions": [{"question": "What is intersectionality described as?", "correct": "An analytical framework for understanding unique combinations of discrimination and privilege", "incorrect": ["A legal standard for measuring inequality", "A sociological method for categorising minorities", "A political theory about overlapping oppressions"]}, {"question": "Which of the following is listed as one of the intersecting factors in intersectionality?", "correct": "Caste", "incorrect": ["Nationality", "Intelligence", "Education level"]}, {"question": "What can these intersecting factors lead to, according to the definition?", "correct": "Both empowerment and oppression", "incorrect": ["Only discrimination", "Social stratification", "Cultural conflict"]}]}, {"label": "Women's Suffrage", "questions": [{"question": "When did the first wave of women's suffrage take place?", "correct": "1893–1930", "incorrect": ["1850–1900", "1900–1930", "1870–1920"]}, {"question": "Which countries were covered in the second wave of women's suffrage (1930–1970)?", "correct": "Nearly all Latin-American countries, much of Sub-Saharan Africa, and some European laggards", "incorrect": ["North America and Western Europe", "Asia and the Middle East", "Eastern Europe and Scandinavia"]}, {"question": "What movement spurred the origins of International Women's Day?", "correct": "The universal female suffrage movement", "incorrect": ["The labour rights movement", "The abolitionist movement", "The temperance movement"]}]}, {"label": "Patriarchy", "questions": [{"question": "How do sociologists explain how gender roles and inequity are established?", "correct": "Through the process of socialisation", "incorrect": ["Through biological predisposition", "Through economic structures", "Through religious institutions"]}, {"question": "In feminist theory, how is the term 'patriarchy' used?", "correct": "To describe a broader social structure in which men as a group dominate society", "incorrect": ["To describe legal discrimination against women", "To describe male violence against women", "To describe unequal pay between genders"]}, {"question": "How are most contemporary societies described in relation to patriarchy?", "correct": "Patriarchal in practice", "incorrect": ["Moving away from patriarchy", "Nominally patriarchal", "Post-patriarchal"]}]}, {"label": "Gender roles", "questions": [{"question": "Traditionally, which sphere have gender roles kept women in?", "correct": "The private sphere", "incorrect": ["The domestic sphere", "The social sphere", "The cultural sphere"]}, {"question": "Which of the following does a gender role influence, according to the definition?", "correct": "The profession a person pursues", "incorrect": ["A person's biological development", "A person's cognitive abilities", "A person's religious beliefs"]}, {"question": "Which groups have led efforts to change aspects of gender roles they find oppressive?", "correct": "Feminist movements", "incorrect": ["International human rights organisations", "Government legislative bodies", "Academic institutions"]}]}, {"label": "Angela Davis", "questions": [{"question": "Where was Angela Davis born?", "correct": "Birmingham, Alabama", "incorrect": ["Atlanta, Georgia", "Detroit, Michigan", "Jackson, Mississippi"]}, {"question": "What organisation did Angela Davis found to dismantle the prison-industrial complex?", "correct": "Critical Resistance", "incorrect": ["Prison Justice Alliance", "Freedom Now Project", "The Abolition Collective"]}, {"question": "What three areas does Angela Davis's work examine the intersections of?", "correct": "Race, gender, and class", "incorrect": ["Race, religion, and politics", "Gender, sexuality, and economics", "Class, culture, and law"]}]}, {"label": "Femdom", "questions": [{"question": "What traditional dynamic does FemDom reverse?", "correct": "Heterosexual gender dynamics where men hold authority", "incorrect": ["Monogamous relationship structures", "Age-based power hierarchies", "Professional and workplace hierarchies"]}, {"question": "What is described as the unifying element across all forms of FemDom?", "correct": "Female authority and male submission", "incorrect": ["Role reversal and costume play", "Emotional dominance and control", "Physical restraint and discipline"]}, {"question": "What is a Female-Led Relationship (FLR) described as?", "correct": "A lifestyle in which women hold authority in all relationship aspects", "incorrect": ["A relationship where only the woman earns income", "A temporary BDSM arrangement", "A dynamic limited to physical intimacy"]}]}, {"label": "BDSM", "questions": [{"question": "What does BDSM stand for?", "correct": "Bondage, Discipline, Dominance and Submission, Sadomasochism", "incorrect": ["Bondage, Domination, Sexual Masochism", "Behaviour, Discipline, Submission, Masochism", "Bondage, Discipline, Submission, Mastery"]}, {"question": "What is described as essential to BDSM activities and relationships?", "correct": "Informed consent of both partners", "incorrect": ["Physical safety equipment", "Prior experience in kink", "Formal negotiation in writing"]}, {"question": "What terms are used to distinguish roles in BDSM?", "correct": "Submissive and dominant", "incorrect": ["Master and servant", "Leader and follower", "Active and passive"]}]}, {"label": "Affirmative Consent", "questions": [{"question": "How can affirmative consent be given?", "correct": "Through clear verbal communication or nonverbal cues or gestures", "incorrect": ["Only through explicit verbal agreement", "Only through a prior written agreement", "Through the absence of refusal"]}, {"question": "In which situations can affirmative consent NOT be given?", "correct": "When a person is intoxicated, unconscious, or asleep", "incorrect": ["When a person is under emotional stress", "When a person has not had a prior relationship", "When a person has not previously consented"]}, {"question": "What does affirmative consent involve beyond agreement?", "correct": "Communication and the active participation of the people involved", "incorrect": ["Documentation and witnesses", "Cooling-off periods between sessions", "Regular check-ins from a third party"]}]}, {"label": "Workplace Equality", "questions": [{"question": "What does equality in the workplace mean?", "correct": "Equal job opportunities and fairness for employees and job applicants", "incorrect": ["Identical salaries for all employees", "Equal representation at all levels of management", "Removing all performance-based assessments"]}, {"question": "What is an inclusive workplace described as enabling employees to do?", "correct": "Come up with different ideas, raise issues, and try new approaches", "incorrect": ["Work flexible hours", "Access equal pay", "Receive identical performance reviews"]}, {"question": "Which of the following is listed as a protected characteristic under discrimination law?", "correct": "Age", "incorrect": ["Occupation", "Educational background", "Marital status"]}]}, {"label": "Autonomy", "questions": [{"question": "What does autonomy refer to in itself?", "correct": "The idea that individuals are entitled to exercise self-determining authority over their own lives", "incorrect": ["The right to freedom of expression", "The ability to make political choices", "The legal protection from state interference"]}, {"question": "What do feminist theories regarding autonomy correlate to?", "correct": "How systematic gender oppression hinders women's ability to be self-determining", "incorrect": ["How social norms restrict individual freedom", "How economic inequality limits women's choices", "How cultural expectations shape gender identity"]}, {"question": "Which two terms are used to describe the self-governing aspect of autonomy in a feminist context?", "correct": "Self-determining and self-governing", "incorrect": ["Independent and empowered", "Free and autonomous", "Liberated and self-sufficient"]}]}, {"label": "Gender Equality", "questions": [{"question": "How does UNICEF define gender equality?", "correct": "Women and men, and girls and boys, enjoying the same rights, resources, opportunities and protections", "incorrect": ["Men and women receiving identical treatment in all circumstances", "The elimination of gender-based discrimination in law", "Equal representation of all genders in political institutions"]}, {"question": "What is another term for gender equality?", "correct": "Sexual equality", "incorrect": ["Social parity", "Gender equity", "Sex neutrality"]}, {"question": "What does gender equality NOT require, according to the definition?", "correct": "That girls and boys be treated exactly alike", "incorrect": ["That all genders have access to the same resources", "That discrimination based on gender be prohibited", "That opportunities be equal regardless of gender"]}]}, {"label": "Mary Astell", "questions": [{"question": "What did Mary Astell primarily advocate for?", "correct": "Equal educational opportunities for women", "incorrect": ["Women's right to vote", "Equal legal rights for women", "Women's access to property ownership"]}, {"question": "Which literary group is said to have been influenced by Astell's philosophical writings?", "correct": "The Bluestockings", "incorrect": ["The Suffragettes", "The Romantics", "The Enlightenment Salon"]}, {"question": "Name one of Mary Astell's major works.", "correct": "A Serious Proposal to the Ladies", "incorrect": ["A Vindication of the Rights of Woman", "The Female Reader", "Thoughts on the Education of Daughters"]}]}, {"label": "Olympe de Gouges", "questions": [{"question": "What is Olympe de Gouges best known for?", "correct": "Her Declaration of the Rights of Woman and of the Female Citizen", "incorrect": ["Her leadership of the French Revolution", "Her founding of the first feminist newspaper", "Her role in abolishing slavery in France"]}, {"question": "Besides women's rights, what other cause did Olympe de Gouges advocate for?", "correct": "Abolitionism", "incorrect": ["Prison reform", "Universal suffrage", "Free public education"]}, {"question": "What career did de Gouges pursue in Paris in the 1780s?", "correct": "Playwright", "incorrect": ["Journalist", "Philosopher", "Politician"]}]}, {"label": "Second-wave feminism", "questions": [{"question": "What did second-wave feminism advocate for, beyond first-wave feminism's focus on formal equality?", "correct": "Substantive equality", "incorrect": ["Political representation", "Economic independence", "Cultural liberation"]}, {"question": "Which of the following did second-wave feminism bring attention to?", "correct": "Domestic violence and marital rape", "incorrect": ["Workplace harassment and pay gaps", "Reproductive rights and abortion access", "Gender representation in media"]}, {"question": "What types of spaces did second-wave feminists establish as key meeting places?", "correct": "Feminist-owned bookstores, credit unions, and restaurants", "incorrect": ["Community centres and libraries", "Women's colleges and universities", "Political organisations and unions"]}]}, {"label": "Third-wave feminism", "questions": [{"question": "When did third-wave feminism begin?", "correct": "The early 1990s", "incorrect": ["The mid-1980s", "The late 1990s", "The early 2000s"]}, {"question": "Which generation of feminists is primarily associated with the third wave?", "correct": "Gen X feminists born in the 1960s and 1970s", "incorrect": ["Baby Boomers born in the 1940s and 1950s", "Millennials born in the 1980s", "Silent Generation feminists born in the 1930s"]}, {"question": "Which of the following new theories emerged during the third wave?", "correct": "Sex positivity and transfeminism", "incorrect": ["Liberal feminism and socialist feminism", "Radical feminism and ecofeminism", "Cultural feminism and legal feminism"]}]}, {"label": "Betty Friedan", "questions": [{"question": "What book is Betty Friedan often credited with sparking the second wave of American feminism?", "correct": "The Feminine Mystique", "incorrect": ["The Female Eunuch", "The Second Sex", "Against Our Will"]}, {"question": "What organisation did Betty Friedan co-found in 1966?", "correct": "The National Organization for Women (NOW)", "incorrect": ["The National Women's Political Caucus", "The Women's Action Alliance", "The National Women's Liberation Front"]}, {"question": "When was The Feminine Mystique published?", "correct": "1963", "incorrect": ["1949", "1970", "1955"]}]}, {"label": "Gloria Steinem", "questions": [{"question": "What magazine did Gloria Steinem co-found?", "correct": "Ms. magazine", "incorrect": ["Spare Rib", "Feminist Review", "Off Our Backs"]}, {"question": "Which organisation did Steinem co-found in 2005 alongside Jane Fonda and Robin Morgan?", "correct": "The Women's Media Center", "incorrect": ["The National Women's Political Caucus", "The Women's Action Alliance", "Take Our Daughters to Work Foundation"]}, {"question": "Which article published in 1969 brought Steinem national attention as a feminist leader?", "correct": "After Black Power, Women's Liberation", "incorrect": ["A Woman's Place", "The Personal Is Political", "Sisterhood Is Powerful"]}]}, {"label": "Judith Butler", "questions": [{"question": "Which fields has Judith Butler's work most influenced?", "correct": "Political philosophy, ethics, psychoanalysis, and feminist and queer theory", "incorrect": ["Sociology, anthropology, and cultural studies", "History, law, and political science", "Psychology, neuroscience, and linguistics"]}, {"question": "What board did Judith Butler chair for a period?", "correct": "The International Gay and Lesbian Human Rights Commission", "incorrect": ["The American Civil Liberties Union", "Human Rights Watch Gender Division", "The National LGBTQ Task Force"]}, {"question": "Judith Butler is described as what kind of philosopher?", "correct": "A feminist and queer philosopher", "incorrect": ["An existential philosopher", "A moral philosopher", "A political philosopher"]}]}, {"label": "Post-structuralism", "questions": [{"question": "What does post-structuralism question about structuralism?", "correct": "The objectivity or stability of interpretive structures", "incorrect": ["The usefulness of language as a tool of meaning", "The existence of universal moral values", "The validity of scientific methodology"]}, {"question": "What does post-structuralism discard?", "correct": "The idea of interpreting the world within pre-established, socially constructed structures", "incorrect": ["The concept of meaning in language", "The idea that society has any structure at all", "The validity of historical narratives"]}, {"question": "What does post-structuralism consider interpretive structures to be constituted by?", "correct": "Broader systems of power", "incorrect": ["Individual subjective experience", "Cultural and historical tradition", "Rational consensus"]}]}, {"label": "Postcolonialism", "questions": [{"question": "What does postcolonialism study?", "correct": "The cultural, political and economic consequences of colonialism and imperialism", "incorrect": ["The history of decolonisation movements", "The political structures of former colonies", "The economic development of postcolonial nations"]}, {"question": "When did the field of postcolonialism start to emerge?", "correct": "The 1960s", "incorrect": ["The 1940s", "The 1970s", "The 1950s"]}, {"question": "What binary social relation does neocolonialism use, according to postcolonial theory?", "correct": "Us-and-them", "incorrect": ["Coloniser and colonised", "Modern and primitive", "Developed and underdeveloped"]}]}, {"label": "Other", "questions": [{"question": "In philosophy, what does 'the Other' refer to?", "correct": "Anyone or anything perceived as distinct or different from oneself", "incorrect": ["A marginalised social group", "An opposing ideological position", "An unrecognised aspect of the self"]}, {"question": "How is 'Othering' described in relation to social exclusion?", "correct": "Excluding a person or group from mainstream society to the social margins for being different from the norm", "incorrect": ["Labelling someone as inferior based on their class", "Denying someone legal rights based on identity", "Using stereotypes to reinforce cultural biases"]}, {"question": "In the context of sexual Othering, what is used to diminish the social status of LGBT people?", "correct": "Negative denotations and connotations of terms describing them", "incorrect": ["Denial of legal protections", "Exclusion from public institutions", "Media misrepresentation"]}]}, {"label": "Power", "questions": [{"question": "What is power defined as?", "correct": "The ability to influence or direct the actions, beliefs, or conduct of actors, usually through law", "incorrect": ["The capacity to enforce laws through military force", "The authority granted by a democratic mandate", "The control of economic resources by a ruling group"]}, {"question": "Which of the following is an example of structural power?", "correct": "Distinguishing between a master and an enslaved person", "incorrect": ["A government passing new legislation", "A religious institution setting moral codes", "A corporation setting employee wages"]}, {"question": "What does discursive power do, according to the definition?", "correct": "Lends legitimacy to some behaviours and groups over others through categories and language", "incorrect": ["Controls information through censorship", "Shapes public opinion through media", "Establishes legal norms through court decisions"]}]}, {"label": "Discrimination", "questions": [{"question": "How is discrimination defined?", "correct": "Making unjustified distinctions between people based on groups or categories they belong to", "incorrect": ["Treating individuals differently based on their behaviour", "Enforcing unequal laws against minority groups", "Denying access to education based on social class"]}, {"question": "Which of the following is listed as a basis for discrimination?", "correct": "Sexual orientation", "incorrect": ["Economic status", "Political affiliation", "Dietary choices"]}, {"question": "What does discrimination typically lead to?", "correct": "Groups being unfairly treated on the basis of perceived statuses", "incorrect": ["Legal challenges from affected groups", "International human rights interventions", "Social movements demanding reform"]}]}, {"label": "Human Rights", "questions": [{"question": "What makes human rights 'inherent and inalienable'?", "correct": "They belong to every individual simply by virtue of being human", "incorrect": ["They are granted by governments to all citizens", "They are recognised by international courts", "They are protected by the United Nations charter"]}, {"question": "Which of the following is listed as an example of a human right?", "correct": "Protection against enslavement", "incorrect": ["The right to home ownership", "The right to employment", "The right to internet access"]}, {"question": "Human rights are described as both what types of principles?", "correct": "Moral and protected by law", "incorrect": ["Universal and absolute", "Cultural and contextual", "Political and negotiated"]}]}, {"label": "Cultural Relativism", "questions": [{"question": "What does cultural relativism assert?", "correct": "The equal validity of all points of view and the relative nature of truth", "incorrect": ["That all cultures are equally advanced", "That moral values are universally shared", "That cultural differences should be celebrated"]}, {"question": "Who established the concept of cultural relativism?", "correct": "Anthropologist Franz Boas", "incorrect": ["Philosopher Immanuel Kant", "Sociologist Émile Durkheim", "Psychologist Carl Jung"]}, {"question": "When did Franz Boas first articulate the idea of cultural relativism?", "correct": "1887", "incorrect": ["1905", "1865", "1920"]}]}, {"label": "Egalitarianism", "questions": [{"question": "What concept does egalitarianism build on?", "correct": "Social equality", "incorrect": ["Individual liberty", "Economic redistribution", "Political democracy"]}, {"question": "What is one key aspect of egalitarianism?", "correct": "Emphasis on equal opportunities for all individuals regardless of background", "incorrect": ["Equal distribution of wealth across society", "Identical treatment in all legal situations", "Removal of all social hierarchies"]}, {"question": "What are egalitarian doctrines generally characterised by?", "correct": "The idea that all humans are equal in fundamental worth or moral status", "incorrect": ["The belief that society must actively compensate for historical injustice", "The principle that laws must treat all people identically", "The view that government must redistribute wealth equally"]}]}, {"label": "Punk subculture", "questions": [{"question": "What does the punk ethos primarily consist of?", "correct": "Non-conformity, anti-authoritarianism, DIY ethics, and anti-consumerism", "incorrect": ["Rebellion, self-expression, nihilism, and hedonism", "Individualism, creativity, pacifism, and community", "Anarchy, violence, anti-capitalism, and secularism"]}, {"question": "What did punk culture originate from?", "correct": "Punk rock", "incorrect": ["Heavy metal music", "The counterculture movement", "Working-class street culture"]}, {"question": "Which of the following is listed as part of the punk subculture's expression?", "correct": "Literature and film", "incorrect": ["Fine art and sculpture", "Classical music and opera", "Academic philosophy"]}]}, {"label": "Anti-authoritarianism", "questions": [{"question": "What do anti-authoritarians typically believe in?", "correct": "Full equality before the law and strong civil liberties", "incorrect": ["The abolition of all governments", "Radical economic redistribution", "Direct democracy at all levels"]}, {"question": "With which ideology is anti-authoritarianism sometimes used interchangeably?", "correct": "Anarchism", "incorrect": ["Libertarianism", "Socialism", "Republicanism"]}, {"question": "What does anarchism entail, as described here?", "correct": "Opposing authority or hierarchical organisation in human relations, including the state", "incorrect": ["Advocating for the elimination of private property", "Supporting decentralised community governance", "Promoting individual freedoms above all else"]}]}, {"label": "Submission", "questions": [{"question": "How is deference defined?", "correct": "Submitting to the espoused, legitimate influence of one's superior out of respect or reverence", "incorrect": ["Following instructions out of fear of consequences", "Complying with social norms to gain acceptance", "Yielding to peer pressure in group situations"]}, {"question": "Which sociologist explored the relationship between deference and demeanour?", "correct": "Erving Goffman", "incorrect": ["Max Weber", "Émile Durkheim", "George Herbert Mead"]}, {"question": "According to Goffman, what happens to a person with good demeanour?", "correct": "Society will hold them in higher esteem", "incorrect": ["They will gain greater political influence", "They are seen as more morally virtuous", "They are treated with more legal protection"]}]}, {"label": "Matriarchy", "questions": [{"question": "What is matriarchy?", "correct": "A social system in which positions of power and privilege are held by women", "incorrect": ["A family structure led by a grandmother figure", "A government system where women hold all political offices", "A culture in which women own all property"]}, {"question": "According to the OED, what is matriarchy?", "correct": "A form of social organisation in which the mother or oldest female is head of the family, with descent reckoned through the female line", "incorrect": ["A democratic system where women hold the majority of votes", "A legal framework where women have superior rights to men", "A religious institution led entirely by women"]}, {"question": "According to James Peoples and Garrick Bailey, what is a popular definition of matriarchy?", "correct": "Female dominance", "incorrect": ["Maternal leadership", "Female governance", "Women's authority"]}]}, {"label": "Social Dominance Theory", "questions": [{"question": "What does Social Dominance Theory (SDT) examine?", "correct": "The caste-like features of group-based social hierarchies and how they perpetuate themselves", "incorrect": ["Individual personality traits linked to authoritarian behaviour", "The role of economics in maintaining social inequality", "How political systems enforce discrimination"]}, {"question": "What term does SDT use for the cultural ideologies that justify group-based inequality?", "correct": "Legitimising myths", "incorrect": ["Dominant narratives", "Social scripts", "Power discourses"]}, {"question": "What are the three primary mechanisms through which group-based inequalities are maintained, according to SDT?", "correct": "Institutional discrimination, aggregated individual discrimination, and behavioural asymmetry", "incorrect": ["Legal exclusion, economic exploitation, and cultural marginalisation", "Violence, propaganda, and social control", "Education, media, and religion"]}]}, {"label": "Perfection", "questions": [{"question": "What Latin verb do the words 'perfection', 'perfect', and 'to perfect' derive from?", "correct": "Perficere", "incorrect": ["Perfectus", "Perfare", "Perfinire"]}, {"question": "What was the ancient Greek word for 'perfection'?", "correct": "Teleiotes", "incorrect": ["Arete", "Kalos", "Eudaimonia"]}, {"question": "Which of Aristotle's three concepts of perfection refers to something so good that nothing of the kind could be better?", "correct": "The second concept", "incorrect": ["The first concept", "The third concept", "All three concepts equally"]}]}, {"label": "Obedience", "questions": [{"question": "How is obedience defined in human behaviour?", "correct": "A form of social influence in which a person yields to explicit instructions from an authority figure", "incorrect": ["Behaviour that conforms to group expectations", "Following rules to avoid social punishment", "Submitting to peer pressure in a group context"]}, {"question": "How is obedience generally distinguished from conformity?", "correct": "Conformity is behaviour intended to match that of the majority, while obedience is yielding to authority", "incorrect": ["Obedience involves written rules while conformity involves unwritten norms", "Conformity is voluntary while obedience is forced", "Obedience is group-based while conformity is individual"]}, {"question": "In psychological research, what kind of demands are individuals typically confronted with to test obedience?", "correct": "Immoral demands designed to elicit internal conflict", "incorrect": ["Physically uncomfortable demands", "Socially embarrassing demands", "Legally questionable demands"]}]}, {"label": "Conformity", "questions": [{"question": "What are norms in the context of conformity?", "correct": "Implicit, specific rules shared by a group that guide interactions with others", "incorrect": ["Official laws and regulations set by governments", "Widely stated expectations of social behaviour", "Agreed-upon codes of conduct in formal settings"]}, {"question": "Why do people often choose to conform to society rather than pursue personal desires?", "correct": "Because it is often easier to follow a path others have already made", "incorrect": ["Because they fear legal consequences", "Because they have been conditioned from childhood", "Because social norms are enforced by authority"]}, {"question": "Can conformity occur when an individual is alone?", "correct": "Yes — people follow social norms even when alone", "incorrect": ["No — conformity only occurs in group settings", "Only when monitored by others", "Only in formal institutional settings"]}]}, {"label": "Classical Conditioning", "questions": [{"question": "Who studied and published experiments on classical conditioning in 1897?", "correct": "Ivan Pavlov", "incorrect": ["B.F. Skinner", "John Watson", "Wilhelm Wundt"]}, {"question": "What did Pavlov observe in his experiments with dogs?", "correct": "Dogs salivated when fed red meat", "incorrect": ["Dogs responded to the sound of a bell by eating", "Dogs became agitated when exposed to strangers", "Dogs learned to press levers for food rewards"]}, {"question": "How does classical conditioning differ from operant conditioning?", "correct": "Operant conditioning modifies the strength of a voluntary behaviour through reinforcement or punishment", "incorrect": ["Classical conditioning uses rewards while operant conditioning uses punishment", "Operant conditioning involves reflexive responses while classical conditioning involves voluntary behaviour", "Classical conditioning applies only to animals, not humans"]}]}, {"label": "Hera", "questions": [{"question": "What is Hera the goddess of?", "correct": "Marriage, women, and family", "incorrect": ["Love, beauty, and desire", "Wisdom, warfare, and handicraft", "Fertility, harvest, and the earth"]}, {"question": "Who are Hera's parents?", "correct": "The Titans Cronus and Rhea", "incorrect": ["Zeus and Demeter", "Uranus and Gaia", "Oceanus and Tethys"]}, {"question": "What is described as one of Hera's defining characteristics in myth?", "correct": "Her jealous and vengeful nature", "incorrect": ["Her compassion and forgiveness", "Her wisdom and counsel", "Her strength and martial power"]}]}, {"label": "International Women's Day", "questions": [{"question": "On what date is International Women's Day celebrated?", "correct": "8 March", "incorrect": ["25 November", "19 June", "12 February"]}, {"question": "Where did International Women's Day originate?", "correct": "Labour movements in Europe and North America during the early 20th century", "incorrect": ["The United Nations General Assembly in the 1970s", "The suffragette movement in the United Kingdom", "The first World Conference on Women in Mexico City"]}, {"question": "Which of the following is an issue that International Women's Day gives focus to?", "correct": "Reproductive rights", "incorrect": ["Climate change", "Global poverty", "Child labour"]}]}, {"label": "High-heeled shoe", "questions": [{"question": "What were the origins of high heels?", "correct": "Equestrian origins, spreading from 10th century Persian galesh", "incorrect": ["Ancient Egyptian ceremonial footwear", "Medieval European court fashion", "16th century Italian Renaissance fashion"]}, {"question": "In early 17th-century Europe, what did high heels signify?", "correct": "Masculinity and high social status", "incorrect": ["Femininity and elegance", "Wealth and aristocratic birth", "Religious devotion and piety"]}, {"question": "By the 20th century, what did a slim high heel profile represent?", "correct": "Femininity", "incorrect": ["Luxury and wealth", "Professional status", "Artistic expression"]}]}, {"label": "Punishment", "questions": [{"question": "How is punishment defined?", "correct": "The imposition of an undesirable or unpleasant outcome in response to breaking a norm or rule", "incorrect": ["A legal sanction imposed by a court of law", "The use of force to deter future wrongdoing", "A social consequence designed to shame individuals"]}, {"question": "What does corporal punishment refer to?", "correct": "Punishments in which physical pain is intended to be inflicted", "incorrect": ["Punishments carried out in institutional settings", "Punishments that restrict freedom of movement", "Punishments involving financial penalties"]}, {"question": "Can punishment occur outside of the criminal justice context?", "correct": "Yes — for example in child discipline or relationships", "incorrect": ["No — punishment is exclusively a legal concept", "Only in formal institutional settings", "Only when sanctioned by an authority figure"]}]}, {"label": "Aftercare", "questions": [{"question": "What does aftercare refer to in BDSM?", "correct": "Providing emotional, psychological, or physical support following BDSM activities", "incorrect": ["Negotiating terms before a BDSM session", "Establishing rules and safewords for play", "Reviewing health and safety guidelines post-session"]}, {"question": "Why may participants need aftercare following BDSM activities?", "correct": "Because activities can be mentally, emotionally, or physically intense", "incorrect": ["Because BDSM activities always result in physical injury", "Because participants must be medically assessed afterwards", "Because legal consent must be re-confirmed"]}, {"question": "What may aftercare also involve?", "correct": "A review or debriefing of the session to reflect on the experience", "incorrect": ["A formal written record of the session", "A medical examination", "Renegotiation of future session terms"]}]}, {"label": "White feminism", "questions": [{"question": "What does 'white feminism' describe?", "correct": "Expressions of feminism perceived as focusing on white women while failing to address oppression faced by ethnic minority women", "incorrect": ["Feminist movements led exclusively by white women", "Feminism that opposes racial diversity in the women's movement", "Academic feminism that ignores working-class women's issues"]}, {"question": "How is the term 'white feminism' primarily used?", "correct": "As a derogatory label to criticise failure to integrate intersecting identities", "incorrect": ["As a neutral descriptor of a historical feminist tradition", "As a positive reclamation by some feminist groups", "As a legal term in anti-discrimination cases"]}, {"question": "What is described as crucial in structuring the lived experiences of white women?", "correct": "Whiteness", "incorrect": ["Class privilege", "Educational background", "Geographic location"]}]}, {"label": "Marginalization", "questions": [{"question": "How does the European Commission define social exclusion?", "correct": "A situation whereby a person is prevented from contributing to and benefiting from economic and social progress", "incorrect": ["The denial of civil rights to a group based on their identity", "The deliberate removal of a group from political participation", "The economic exclusion of minorities from the labour market"]}, {"question": "Where was the term 'social marginalisation' first used?", "correct": "France, in the late 20th century", "incorrect": ["The United States, in the 1960s", "The United Kingdom, in the 1980s", "Germany, in the 1970s"]}, {"question": "Social exclusion involves being denied access to what?", "correct": "Rights, opportunities, and resources fundamental to social integration", "incorrect": ["Government benefits and public services", "Legal protection and political representation", "Educational institutions and healthcare systems"]}]}, {"label": "LGBTQ+", "questions": [{"question": "What does LGBTQ stand for?", "correct": "Lesbian, gay, bisexual, transgender, and queer", "incorrect": ["Lesbian, gay, bisexual, trans, questioning", "Lesbian, gender-nonconforming, bisexual, trans, queer", "Liberal, gay, bisexual, trans, questioning"]}, {"question": "In what decade was the initialism GLBT (later LGBT) gradually adopted?", "correct": "The 1990s", "incorrect": ["The 1970s", "The 1980s", "The 2000s"]}, {"question": "Why did some activists in the 2010s begin reclaiming the term 'queer'?", "correct": "As a more radical and inclusive umbrella term", "incorrect": ["To distance themselves from the LGBT label", "To make the movement more politically mainstream", "To replace the word 'gay' in common usage"]}]}, {"label": "Respect", "questions": [{"question": "What is respect described as?", "correct": "A positive feeling or deferential action shown towards someone considered important or held in high esteem", "incorrect": ["A legal obligation to treat others fairly", "A social contract between individuals in a community", "A moral duty arising from shared cultural values"]}, {"question": "In which type of culture is respect more often earned through exemplary actions than granted by default?", "correct": "Honour cultures", "incorrect": ["Collectivist cultures", "Hierarchical cultures", "Western cultures"]}, {"question": "What is the end goal described in relation to respect?", "correct": "For all people to be treated with respect", "incorrect": ["For respect to be codified into law", "For respect to be taught in schools", "For cultures to develop shared courtesies"]}]}, {"label": "Sexism", "questions": [{"question": "What is sexism primarily linked to?", "correct": "Gender roles and stereotypes", "incorrect": ["Economic inequality between men and women", "Legal discrimination in the workplace", "Media representations of gender"]}, {"question": "Who does sexism primarily affect?", "correct": "Women and girls", "incorrect": ["All genders equally", "Only women in the workplace", "Minority gender groups"]}, {"question": "What are two forms of equality that sexism can violate?", "correct": "Formal equality (equal opportunities) and substantive equality (equal outcomes)", "incorrect": ["Political equality and economic equality", "Legal equality and social equality", "Civil equality and cultural equality"]}]}, {"label": "Gender identity", "questions": [{"question": "How is gender identity defined?", "correct": "The personal sense of one's own gender", "incorrect": ["The biological sex assigned at birth", "The gender roles an individual fulfils in society", "The legal gender recorded on official documents"]}, {"question": "Can gender identity differ from a person's assigned sex?", "correct": "Yes", "incorrect": ["No — they are always the same", "Only in cases of intersex individuals", "Only if medically confirmed"]}, {"question": "What does gender expression typically reflect?", "correct": "A person's gender identity", "incorrect": ["A person's biological sex", "Social expectations and norms", "Cultural and religious background"]}]}, {"label": "Male privilege", "questions": [{"question": "What is male privilege?", "correct": "The system of advantages or rights available to men on the basis of their sex", "incorrect": ["Legal protections granted to men in patriarchal societies", "Economic benefits men receive in the workplace", "Social norms that favour men in personal relationships"]}, {"question": "When did academic studies of male privilege become a focus of feminist scholarship?", "correct": "The 1970s", "incorrect": ["The 1950s", "The 1960s", "The 1980s"]}, {"question": "What did researchers begin focusing on in later decades of male privilege study?", "correct": "The intersectionality and overlapping nature of privileges relating to sex, race, class, and sexual orientation", "incorrect": ["The legal mechanisms that enforce male privilege", "The psychological effects of privilege on men", "The economic impact of male privilege on wage gaps"]}]}, {"label": "Sexual objectification", "questions": [{"question": "What is sexual objectification?", "correct": "Treating a person solely as an object of sexual desire without regard to their personality or dignity", "incorrect": ["Reducing a person to their physical appearance", "Exploiting a person for financial gain", "Controlling a person through sexual coercion"]}, {"question": "Although both men and women can be objectified, with which group is it mainly associated?", "correct": "Women", "incorrect": ["Young people", "Marginalised groups", "Public figures"]}, {"question": "What do many feminists argue sexual objectification of women contributes to?", "correct": "Gender inequality", "incorrect": ["Physical harm to women", "Decline in women's political participation", "Increased rates of depression in women"]}]}, {"label": "Substantive equality", "questions": [{"question": "What is substantive equality concerned with?", "correct": "Equality of outcome for disadvantaged and marginalised people and groups", "incorrect": ["Equality of treatment under the law", "Identical rights for all citizens", "Formal legal protections against discrimination"]}, {"question": "How is substantive equality primarily achieved?", "correct": "By implementing special measures to assist or advance the lives of disadvantaged individuals", "incorrect": ["By removing all existing laws that distinguish between groups", "By enforcing identical treatment of all people in legal proceedings", "By creating independent equality commissions to monitor compliance"]}, {"question": "What must the law take into account to achieve substantive equality?", "correct": "Discrimination, marginalisation, and unequal distribution", "incorrect": ["Cultural values and historical traditions", "Individual circumstances and personal choices", "Economic productivity and social contribution"]}]}, {"label": "Toxic masculinity", "questions": [{"question": "What does toxic masculinity refer to?", "correct": "Aspects of hegemonic masculinity that are socially destructive, such as misogyny, homophobia, and violent domination", "incorrect": ["All traditional expressions of masculine identity", "Aggressive behaviour in competitive sports", "Any male behaviour that causes harm to others"]}, {"question": "Which of the following is listed as a consequence of toxic masculine traits being normalised in boys?", "correct": "Normalisation of violence through sayings like 'boys will be boys'", "incorrect": ["Boys performing better academically", "Boys becoming more competitive in sports", "Boys developing stronger leadership qualities"]}, {"question": "What psychological problems are self-reliance and emotional repression correlated with in men?", "correct": "Depression, increased stress, and substance use disorders", "incorrect": ["Anxiety disorders and phobias", "Anti-social personality disorder", "Post-traumatic stress disorder"]}]}, {"label": "Prison", "questions": [{"question": "What are the two primary functions of prisons within the criminal justice system?", "correct": "Holding people awaiting trial and confining those convicted to serve their sentences", "incorrect": ["Rehabilitation of offenders and deterrence of future crime", "Punishment of criminals and protection of the public", "Education of inmates and reintegration into society"]}, {"question": "How can prisons be used by authoritarian regimes?", "correct": "As a tool for political repression to detain perceived opponents without fair trial", "incorrect": ["As a way to generate revenue through prison labour", "As a means of ethnic segregation", "As institutions for ideological indoctrination"]}, {"question": "Which of the following is NOT listed as an alternative name for a prison?", "correct": "Rehabilitation centre", "incorrect": ["Penitentiary", "Gaol", "Remand centre"]}]}, {"label": "Femicide", "questions": [{"question": "How does the UN estimate the frequency of femicide by family members, partners, or non-intimate individuals?", "correct": "Every 10 minutes globally", "incorrect": ["Every hour globally", "Every 30 minutes globally", "Every 5 minutes globally"]}, {"question": "Which of the following is listed as a cause of femicide?", "correct": "Male entitlement", "incorrect": ["Economic deprivation", "Social media influence", "Lack of legal deterrents"]}, {"question": "How is femicide defined?", "correct": "The intentional murder that exclusively or disproportionately targets women or girls because of their gender", "incorrect": ["Any murder of a woman or girl", "Violence against women in domestic settings", "Gender-based hate crimes that do not result in death"]}]}, {"label": "Internalized sexism", "questions": [{"question": "What is internalized sexism?", "correct": "Sexist behaviour and attitudes enacted by women toward themselves or other women and girls", "incorrect": ["Sexism that is legally tolerated within social institutions", "Sexist attitudes held by men that are culturally accepted", "Discrimination against women that goes unrecognised by society"]}, {"question": "What does internalized oppression consist of?", "correct": "Oppressive practices that continue even when members of the oppressor group are not present", "incorrect": ["Oppression that is internalised and expressed as self-hatred", "Discrimination that becomes part of official policy", "Marginalisation that occurs within oppressed communities"]}, {"question": "What are listed as modes of internalisation of sexism?", "correct": "Early childhood inculturation and consumption of media, especially celebrity and entertainment news", "incorrect": ["Workplace discrimination and legal inequality", "Peer pressure and social media", "Educational disadvantage and poverty"]}]}, {"label": "Likeability trap", "questions": [{"question": "What is the likeability trap as a campaign tactic?", "correct": "Portraying one's opponent, usually a woman, as calculating or power-hungry to harm their likeability", "incorrect": ["Using personal attacks to discredit a political rival's policies", "Spreading misinformation about a candidate's professional record", "Targeting a candidate's personal relationships to reduce public trust"]}, {"question": "Beyond politics, where has a similar likeability trap been observed?", "correct": "Business management", "incorrect": ["Academic institutions", "Journalism", "Legal professions"]}, {"question": "Who wrote about the likeability trap in contexts beyond politics?", "correct": "Alicia Menendez", "incorrect": ["Sheryl Sandberg", "Gloria Steinem", "Anne-Marie Slaughter"]}]}, {"label": "Sex workers' rights", "questions": [{"question": "What do sex workers' rights movements generally aim for?", "correct": "To legalise or decriminalise sex work, destigmatise it, and ensure fair treatment", "incorrect": ["To establish international monitoring bodies for the sex industry", "To provide social welfare exclusively for sex workers", "To prosecute clients of sex workers globally"]}, {"question": "What types of rights are encompassed by sex workers' rights movements?", "correct": "Human, health, and labour rights", "incorrect": ["Civil, political, and economic rights", "Legal, social, and cultural rights", "Privacy, safety, and employment rights"]}, {"question": "Who specifically do sex workers' rights movements involve?", "correct": "Sex workers and their clients", "incorrect": ["Sex workers and advocacy organisations", "Sex workers, clients, and law enforcement", "Only sex workers themselves"]}]}, {"label": "Misogyny", "questions": [{"question": "What is misogyny?", "correct": "Hatred of, contempt for, or prejudice against women or girls", "incorrect": ["Legal discrimination against women in patriarchal societies", "Violence against women in domestic settings", "Systemic exclusion of women from positions of power"]}, {"question": "How does misogyny function in society?", "correct": "It keeps women at a lower social status than men, maintaining the social roles of patriarchy", "incorrect": ["It prevents women from entering the workforce", "It limits women's access to education", "It reduces women's political representation"]}, {"question": "In some cases, what does misogyny do to women who accept an inferior status?", "correct": "It rewards them", "incorrect": ["It punishes them", "It ignores them", "It publicly humiliates them"]}]}, {"label": "Goddess", "questions": [{"question": "In which Hindu sect does the ultimate deity take the form of a Supreme Goddess?", "correct": "Shaktism", "incorrect": ["Vaishnavism", "Shaivism", "Smartism"]}, {"question": "In Vajrayana Buddhism, what does the female principle in the yab yum pairing represent?", "correct": "Perfect wisdom", "incorrect": ["Compassion", "Creative energy", "Liberation"]}, {"question": "What did a religious experiment involving psychedelics reveal about the divine?", "correct": "Leaders from diverse religious groups generally experienced the divine as feminine", "incorrect": ["The divine was experienced as formless and genderless", "Religious leaders refused to characterise the divine by gender", "The divine was experienced differently depending on religion"]}]}, {"label": "Minority rights", "questions": [{"question": "What do minority rights include beyond individual rights?", "correct": "Collective rights accorded to any minority group", "incorrect": ["Special legal protections from government interference", "Affirmative action policies in employment", "Reserved seats in legislative bodies"]}, {"question": "What is the main principle in modern liberal democracy regarding minorities?", "correct": "The protection of minority rights", "incorrect": ["Equal representation of all groups in government", "Prohibition of discrimination in all forms", "Guaranteed cultural autonomy for minority groups"]}, {"question": "Which of the following is listed as a civil-rights movement seeking to ensure individual rights are not denied based on minority group membership?", "correct": "The global LGBT-rights movement", "incorrect": ["The international labour rights movement", "The global climate justice movement", "The international refugee rights movement"]}]}, {"label": "Anti-capitalism", "questions": [{"question": "What do anti-capitalists seek to replace capitalism with?", "correct": "Alternative economic systems such as socialism and communism", "incorrect": ["A mixed economy with strong government regulation", "A cooperative economic model", "A decentralised barter economy"]}, {"question": "What two positions can anti-capitalism range between?", "correct": "A reformist position limiting corporate power, and a radical position rejecting capitalism entirely", "incorrect": ["A moderate position favouring regulation, and an extreme position favouring revolution", "A political position and an economic position", "A progressive position and an anarchist position"]}, {"question": "What commitment is outlined in the World Social Forum charter in relation to anti-capitalism?", "correct": "A commitment to democracy and egalitarianism", "incorrect": ["A commitment to the abolition of private property", "A commitment to international workers' solidarity", "A commitment to sustainable development"]}]}, {"label": "Reform", "questions": [{"question": "What is reform generally regarded as antithetical to?", "correct": "Revolution", "incorrect": ["Conservatism", "Tradition", "Authoritarianism"]}, {"question": "What movement is believed to have given rise to the modern usage of 'reform'?", "correct": "Christopher Wyvill's Association movement, which identified 'Parliamentary Reform' as its aim", "incorrect": ["The French Revolutionary movement", "The Protestant Reformation", "The British labour movement"]}, {"question": "What may developing countries implement to improve living standards?", "correct": "Reforms to macroeconomic policy, the civil service, and public financial management", "incorrect": ["Military reform and border security reform", "Cultural reform and educational reform", "Constitutional reform and electoral reform"]}]}, {"label": "Female superiority", "questions": [{"question": "In which historical period was the belief in female superiority present in literature?", "correct": "The Renaissance and early modern period", "incorrect": ["Classical antiquity", "The Victorian era", "The Enlightenment"]}, {"question": "Which feminist movement included the belief in female superiority as part of its arguments?", "correct": "Second-wave feminism", "incorrect": ["First-wave feminism", "Third-wave feminism", "Fourth-wave feminism"]}, {"question": "To which broader concept does the belief in female superiority trace back?", "correct": "Protofeminism", "incorrect": ["Matriarchal theory", "Radical feminism", "Liberal feminism"]}]}, {"label": "Male chauvinism", "questions": [{"question": "What is male chauvinism?", "correct": "The belief that men are superior to women", "incorrect": ["Legal discrimination against women in public life", "Social pressure on men to maintain power", "Institutional exclusion of women from professional roles"]}, {"question": "What does chauvinism mean more broadly?", "correct": "The unreasonable belief in the superiority or dominance of one's own group", "incorrect": ["Aggressive promotion of one's cultural values", "Refusal to acknowledge the rights of others", "Prejudice based on nationality or ethnicity"]}, {"question": "Which variation of the term is described as an insult?", "correct": "Male chauvinist pig", "incorrect": ["Male supremacist", "Male oppressor", "Male dominator"]}]}, {"label": "Protofeminism", "questions": [{"question": "What does protofeminism refer to?", "correct": "Concepts that anticipate modern feminism in eras when the feminist concept as such was still unknown", "incorrect": ["The earliest wave of the formal feminist movement", "Feminist ideas that predate the 20th century", "Feminist theory developed outside of Western contexts"]}, {"question": "The usefulness of the term 'protofeminist' has been questioned by some scholars. What is one reason for this?", "correct": "The precise usage is disputed, as 18th and 19th-century feminism is often subsumed into 'feminism'", "incorrect": ["Because protofeminism did not advocate for legal rights", "Because the term is seen as historically inaccurate", "Because protofeminism is indistinguishable from liberal feminism"]}, {"question": "Which other term is mentioned alongside 'protofeminist' as having its usefulness questioned?", "correct": "Postfeminist", "incorrect": ["Antifeminist", "Neo-feminist", "Prefeminist"]}]}, {"label": "Tracee Ellis Ross", "questions": [{"question": "What does Tracee Ellis Ross say she didn't see enough examples of?", "correct": "Different versions of how a woman can find happiness, power, and sensuality without it being through how she's seen by a man", "incorrect": ["Women achieving professional success without male support", "Women defining their own sexuality independently", "Women living outside of traditional family structures"]}, {"question": "What label does Tracee Ellis Ross say people give her, which she accepts but reframes?", "correct": "Poster child for being single", "incorrect": ["Poster child for independence", "Poster child for feminism", "Poster child for self-sufficiency"]}, {"question": "What would Tracee Ellis Ross prefer to be a poster child for?", "correct": "Living her life on her own terms", "incorrect": ["Being a strong and independent woman", "Rejecting romantic relationships", "Defining modern womanhood"]}]}, {"label": "de Beauvoir, Quote", "questions": [{"question": "According to de Beauvoir, for love to become a source of life for women, what must change?", "correct": "Women must be able to love in strength rather than weakness, finding themselves rather than escaping themselves", "incorrect": ["Men must learn to treat women as equals in relationships", "Society must remove the cultural barriers to women's freedom", "Women must abandon traditional notions of romantic love"]}, {"question": "How does de Beauvoir describe love for women in the meantime?", "correct": "As a curse that lies heavily upon women confined in the feminine universe", "incorrect": ["As a source of power that is systematically denied to women", "As a tool used by men to control women", "As an illusion created by patriarchal society"]}, {"question": "What does de Beauvoir say love represents for a woman in a mutilated, insufficient state?", "correct": "A mortal danger", "incorrect": ["A form of oppression", "A temporary escape", "A social obligation"]}]}, {"label": "Winnie Madikizela-Mandela", "questions": [{"question": "According to Madikizela-Mandela, how must people free themselves?", "correct": "By breaking the chains of oppression themselves", "incorrect": ["By working within existing political systems", "By building solidarity with other oppressed groups", "By demanding rights through peaceful protest"]}, {"question": "What does Madikizela-Mandela say is expressed only through self-liberation?", "correct": "Dignity", "incorrect": ["Freedom", "Justice", "Equality"]}, {"question": "What does Madikizela-Mandela say is the result of accepting humiliation, indignity, or insult?", "correct": "Acceptance of inferiority", "incorrect": ["Loss of political rights", "Surrender of one's identity", "Reinforcement of oppressive systems"]}]}, {"label": "Paradox of tolerance", "questions": [{"question": "Who articulated the paradox of tolerance?", "correct": "Philosopher Karl Popper", "incorrect": ["John Stuart Mill", "John Rawls", "Jürgen Habermas"]}, {"question": "In which book did Karl Popper introduce the paradox of tolerance?", "correct": "The Open Society and Its Enemies (1945)", "incorrect": ["The Logic of Scientific Discovery (1934)", "Conjectures and Refutations (1963)", "Objective Knowledge (1972)"]}, {"question": "What does the paradox of tolerance warn that a tolerant society must retain the right to do?", "correct": "Deny tolerance to those who promote intolerance", "incorrect": ["Restrict freedom of speech to prevent harm", "Prosecute those who threaten democratic values", "Limit the rights of extremist political parties"]}]}, {"label": "Original position", "questions": [{"question": "What is the original position?", "correct": "A hypothetical position from which members of society would choose principles for their society without knowing what position they would occupy in it", "incorrect": ["The starting point of social contract theory", "The natural state of humanity before society", "The ideological position before any political beliefs are formed"]}, {"question": "With whose work is the 'veil of ignorance' most closely associated?", "correct": "John Rawls", "incorrect": ["John Stuart Mill", "Immanuel Kant", "Thomas Hobbes"]}, {"question": "What knowledge does the 'veil of ignorance' prevent individuals from having?", "correct": "Their ethnicity, social status, gender, and ideas of how to lead a good life", "incorrect": ["Their legal rights and civic obligations", "Their natural talents and abilities", "Their historical and cultural background"]}]}, {"label": "Peace", "questions": [{"question": "How is peace commonly defined in a societal sense?", "correct": "A lack of conflict and freedom from fear of violence between individuals or groups", "incorrect": ["The complete absence of disagreement between social groups", "The presence of strong institutions ensuring justice", "A state of mutual cooperation between nations"]}, {"question": "Does a universal definition of peace concretely exist?", "correct": "No — it gets expanded and defined proactively based on context and culture", "incorrect": ["Yes — as defined by the United Nations charter", "Yes — as the absence of armed conflict", "No — but most cultures share a common core definition"]}, {"question": "Can symbols of peace convey negative meanings?", "correct": "Yes — they can also convey oppression or hatred depending on context", "incorrect": ["No — peace symbols are universally positive", "Only in post-conflict settings", "Only when used by authoritarian regimes"]}]}, {"label": "Duty", "questions": [{"question": "What is a duty?", "correct": "A commitment or expectation to perform some action in certain circumstances", "incorrect": ["A legal obligation enforced by the state", "A moral principle derived from religious teaching", "A social agreement between members of a community"]}, {"question": "What distinguishes a 'positive duty' from a 'negative duty'?", "correct": "Positive duties require action, while negative duties require refraining from action", "incorrect": ["Positive duties are beneficial, while negative duties cause harm", "Positive duties are legally enforceable, while negative duties are moral", "Positive duties are voluntary, while negative duties are mandatory"]}, {"question": "Why may negative duties be easier to fulfil, according to Michael Freeman?", "correct": "They do not require any action", "incorrect": ["They carry no legal penalties", "They are less socially enforced", "They require fewer resources to carry out"]}]}, {"label": "Positive psychology", "questions": [{"question": "When did positive psychology begin as a new domain?", "correct": "1998, when Martin Seligman chose it as the theme for his term as APA president", "incorrect": ["1975, when Abraham Maslow published his hierarchy of needs", "1985, following Carl Rogers's work on person-centred therapy", "2005, following the publication of Martin Seligman's book 'Flourish'"]}, {"question": "What is positive psychology a reaction against?", "correct": "Past practices that focused on mental illness, maladaptive behaviour, and negative thinking", "incorrect": ["Behaviourism and its emphasis on external stimuli", "Psychoanalytic theory and its focus on the unconscious", "Cognitive behavioural therapy and its emphasis on thought patterns"]}, {"question": "Which humanistic movement does positive psychology build on?", "correct": "The work of Abraham Maslow and Carl Rogers", "incorrect": ["The existentialist movement of Sartre and Camus", "The humanist philosophy of Erasmus and More", "The social psychology movement of Kurt Lewin"]}]}, {"label": "Athena", "questions": [{"question": "What is Athena associated with?", "correct": "Wisdom, warfare, and handicraft", "incorrect": ["Love, beauty, and desire", "Marriage, women, and family", "Agriculture, harvest, and fertility"]}, {"question": "Which building is dedicated to Athena?", "correct": "The Parthenon on the Acropolis of Athens", "incorrect": ["The Temple of Zeus at Olympia", "The Erechtheion on the Acropolis", "The Temple of Hephaestus in Athens"]}, {"question": "With which Roman goddess was Athena later syncretised?", "correct": "Minerva", "incorrect": ["Juno", "Venus", "Diana"]}]}, {"label": "Master/Slave (BDSM)", "questions": [{"question": "In BDSM Master/slave structures, what are the core values rather than love?", "correct": "Service and obedience", "incorrect": ["Power and control", "Discipline and submission", "Loyalty and devotion"]}, {"question": "Can participants in a Master/slave dynamic be of any gender or sexual orientation?", "correct": "Yes", "incorrect": ["No — it is specifically heterosexual", "Only in some jurisdictions", "No — it is limited to male Masters and female slaves"]}, {"question": "How does BDSM Master/slave differ from historical or modern non-consensual slavery?", "correct": "BDSM Master/slave is consensual and lacks the legal force of non-consensual slavery, which is forbidden by law", "incorrect": ["BDSM Master/slave involves no physical restrictions on movement", "BDSM Master/slave must be registered with a legal body", "BDSM Master/slave is not recognised as a valid relationship structure"]}]}, {"label": "Affirmative Action", "questions": [{"question": "What does affirmative action refer to?", "correct": "A set of policies and practices seeking to address systemic discrimination", "incorrect": ["Legal quotas for minority representation in government", "Anti-discrimination laws in employment and education", "Diversity training programmes in corporations"]}, {"question": "What has support for affirmative action historically been justified by?", "correct": "The idea that it may help bridge inequalities in employment, pay, and access to education", "incorrect": ["The principle that all groups deserve equal legal representation", "The belief that minorities are inherently disadvantaged", "The goal of achieving proportional demographic representation in all sectors"]}, {"question": "What is another term used for affirmative action in some countries?", "correct": "Positive discrimination", "incorrect": ["Corrective action", "Equitable treatment", "Compensatory policy"]}]}, {"label": "Comprehensive sex education", "questions": [{"question": "What does comprehensive sex education (CSE) differ from?", "correct": "Abstinence-only education", "incorrect": ["Relationships and health education", "Traditional family life education", "Biology-focused sex education"]}, {"question": "Which of the following topics does CSE cover?", "correct": "Sexual orientation, gender identity, and relationship skills", "incorrect": ["Anatomy, reproduction, and disease prevention only", "Social norms, cultural expectations, and family planning", "Religious perspectives on sexuality and marriage"]}, {"question": "What does CSE seek to empower individuals to do?", "correct": "Make informed, responsible decisions about sexual health and promote respect and equality in sexual relationships", "incorrect": ["Abstain from sexual activity until marriage", "Report sexual abuse and exploitation", "Understand the legal age of consent and related laws"]}]}, {"label": "Invisible labor", "questions": [{"question": "Who coined the term 'invisible labor'?", "correct": "Arlene Kaplan Daniels", "incorrect": ["Arlie Hochschild", "Judith Butler", "bell hooks"]}, {"question": "Even when women are equally employed, what are they still responsible for?", "correct": "The majority of invisible labour, including cognitive labour", "incorrect": ["All domestic responsibilities within the household", "The majority of childcare and elder care", "Most unpaid community and volunteer work"]}, {"question": "Which of the following is listed as a group the term has been applied to?", "correct": "Wait staff", "incorrect": ["Teachers", "Healthcare workers", "Factory workers"]}]}, {"label": "Reproductive rights", "questions": [{"question": "According to the WHO, what do reproductive rights recognise as a basic right?", "correct": "The right of all couples and individuals to decide freely the number, spacing, and timing of their children", "incorrect": ["The right of all people to access free contraception", "The right to terminate a pregnancy in all circumstances", "The right of women to make reproductive decisions independently of their partners"]}, {"question": "From what must reproductive decisions be free, according to the WHO?", "correct": "Discrimination, coercion, and violence", "incorrect": ["Government interference, religious pressure, and financial barriers", "Partner influence, cultural norms, and institutional barriers", "Medical gatekeeping, legal restrictions, and economic constraints"]}, {"question": "What else do reproductive rights include alongside family planning rights?", "correct": "The right to attain the highest standard of sexual and reproductive health", "incorrect": ["The right to access fertility treatments", "The right to educational information about contraception", "The right to state-funded maternal healthcare"]}]}, {"label": "Pink tax", "questions": [{"question": "What does the 'pink tax' refer to?", "correct": "The tendency for products marketed toward women to be more expensive than those marketed toward men", "incorrect": ["A government tax levied on women's hygiene products", "The pay gap between men and women for equivalent work", "Higher insurance premiums charged to women"]}, {"question": "What does research show is the primary cause of the pink tax?", "correct": "Women sorting into goods with higher marginal costs", "incorrect": ["Gender-based price discrimination by retailers", "Higher production costs for women's products", "Marketing and branding costs for female-targeted products"]}, {"question": "Where does the name 'pink tax' come from?", "correct": "The observation that many of the affected products are pink", "incorrect": ["A political campaign that used pink to symbolise women's economic inequality", "A feminist economist who highlighted the issue in a paper", "The colour coding used in tax legislation for gender-specific product categories"]}]}, {"label": "Follicular Phase", "questions": [{"question": "When does the follicular phase begin?", "correct": "On the day you get your period", "incorrect": ["On the day of ovulation", "At the midpoint of the menstrual cycle", "At the end of the luteal phase"]}, {"question": "What does rising estrogen cause during the follicular phase?", "correct": "The lining of the uterus to grow and thicken", "incorrect": ["The release of an egg from the ovary", "Progesterone levels to increase", "The uterine lining to shed"]}, {"question": "During which days does one developing follicle form a fully mature egg?", "correct": "Days 10 to 14", "incorrect": ["Days 1 to 5", "Days 15 to 20", "Days 5 to 10"]}]}, {"label": "Menses Phase", "questions": [{"question": "What triggers the menses phase?", "correct": "The lining of the uterus shedding through the vagina when pregnancy has not occurred", "incorrect": ["A drop in luteinizing hormone", "The release of an egg from the ovary", "A rise in progesterone levels"]}, {"question": "How many days do most people bleed during their period?", "correct": "Three to five days", "incorrect": ["One to three days", "Five to seven days", "Seven to ten days"]}, {"question": "Up to how many days is a period usually not a cause for worry?", "correct": "Seven days", "incorrect": ["Five days", "Ten days", "Four days"]}]}, {"label": "Ovulation", "questions": [{"question": "On roughly what day does ovulation occur in a 28-day cycle?", "correct": "Day 14", "incorrect": ["Day 7", "Day 21", "Day 10"]}, {"question": "What hormone surge causes the ovary to release its egg?", "correct": "Luteinizing hormone (LH)", "incorrect": ["Follicle-stimulating hormone (FSH)", "Progesterone", "Estrogen"]}, {"question": "What is the event of the ovary releasing an egg called?", "correct": "Ovulation", "incorrect": ["Implantation", "Fertilisation", "Menstruation"]}]}, {"label": "Luteal phase", "questions": [{"question": "When does the luteal phase take place in a typical cycle?", "correct": "From about day 15 to day 28", "incorrect": ["From day 1 to day 14", "From day 10 to day 20", "From day 7 to day 21"]}, {"question": "What does the egg do after leaving the ovary during the luteal phase?", "correct": "It begins to travel through the fallopian tubes to the uterus", "incorrect": ["It is immediately fertilised in the ovary", "It attaches directly to the uterine wall", "It dissolves if not fertilised within 24 hours"]}, {"question": "What happens if the egg is not fertilised during the luteal phase?", "correct": "Estrogen and progesterone levels drop, and the uterine lining sheds during a period", "incorrect": ["The egg is reabsorbed into the ovary", "A new follicle immediately begins to form", "Progesterone levels remain elevated for several more days"]}]}, {"label": "Menstrual cycle", "questions": [{"question": "What is the menstrual cycle?", "correct": "The monthly series of changes the body goes through to prepare for pregnancy", "incorrect": ["The process by which the ovaries produce hormones", "The biological mechanism regulating fertility in women", "The hormonal cycle that controls mood and energy levels"]}, {"question": "What is it called when one of the ovaries releases an egg?", "correct": "Ovulation", "incorrect": ["Menstruation", "Implantation", "Fertilisation"]}, {"question": "What happens if the released egg is not fertilised?", "correct": "The lining of the uterus sheds through the vagina as a menstrual period", "incorrect": ["The egg is reabsorbed into the bloodstream", "Progesterone levels rise to prepare for a new cycle", "The uterine lining thickens further before shedding"]}]}, {"label": "Gender pay gap", "questions": [{"question": "What is the gender pay gap?", "correct": "The average difference between the remuneration for men and women who are employed", "incorrect": ["The legal difference between minimum wages for men and women", "The gap in lifetime earnings between men and women due to career breaks", "The difference in benefits and bonuses received by men and women"]}, {"question": "What does the 'adjusted pay gap' measure?", "correct": "The difference in pay between men and women for the same work, accounting for hours, occupation, education, and experience", "incorrect": ["The overall average difference in yearly earnings between men and women", "The pay gap after accounting for maternity and paternity leave", "The difference in earnings between full-time and part-time workers by gender"]}, {"question": "In most countries, how are women paid compared to men?", "correct": "Less than men for the same work", "incorrect": ["The same as men for the same work", "More than men in some sectors", "Less than men overall but equally for the same role"]}]}, {"label": "Economic inequality", "questions": [{"question": "What three concepts does economic inequality cover?", "correct": "Income inequality, wealth inequality, and consumption inequality", "incorrect": ["Pay inequality, property inequality, and opportunity inequality", "Class inequality, educational inequality, and economic mobility", "Wage inequality, asset inequality, and tax inequality"]}, {"question": "What does wealth inequality specifically measure?", "correct": "How the total sum of wealth owned by people is distributed among the owners", "incorrect": ["How much money people earn in wages and salaries", "How much money people spend on goods and services", "How access to financial services is distributed across society"]}, {"question": "Can economic inequality be measured within sub-populations?", "correct": "Yes — for example within gender groups or age groups", "incorrect": ["No — it can only be measured between nations", "Only between high-income and low-income groups", "Only between racial or ethnic groups"]}]}, {"label": "Sadomasochism", "questions": [{"question": "Who is the term 'sadism' named after?", "correct": "The Marquis de Sade, a French author known for his violent and libertine works", "incorrect": ["Leopold von Sacher-Masoch, an Austrian author", "Richard von Krafft-Ebing, a German psychiatrist", "Havelock Ellis, a British sexologist"]}, {"question": "What does sadomasochism involve?", "correct": "Deriving pleasure from acts of inflicting or receiving pain or humiliation", "incorrect": ["Consensual role-play involving dominance and submission", "Sexual pleasure derived exclusively from physical restraint", "Consensual power exchange in romantic relationships"]}, {"question": "Do sadomasochistic behaviours and desires need to be linked to sex?", "correct": "No — they do not necessarily need to be linked to sex", "incorrect": ["Yes — by definition they are always sexual", "Only in clinical definitions of the term", "Only in consensual BDSM contexts"]}]}, {"label": "Discipline", "questions": [{"question": "When are rules in BDSM typically set and agreed upon?", "correct": "Before the beginning of any BDSM scene or situation", "incorrect": ["During the scene as needs arise", "After the scene as part of aftercare", "Only in long-term BDSM relationships"]}, {"question": "What is punishment used as in BDSM when rules are broken?", "correct": "A means of discipline", "incorrect": ["A method of ending the scene", "A signal to re-negotiate terms", "A way to establish a new safeword"]}, {"question": "What can punishment in BDSM consist of?", "correct": "Physical, psychological, or a combination of both", "incorrect": ["Only physical consequences", "Only verbal communication", "Only deprivation of privileges"]}]}, {"label": "Limits", "questions": [{"question": "What do limits refer to in BDSM?", "correct": "Issues that participants feel strongly about, usually referring to prohibited activities", "incorrect": ["The physical boundaries of a play space", "The maximum intensity of a BDSM scene", "The time duration of a BDSM session"]}, {"question": "What do participants typically negotiate before a BDSM scene?", "correct": "An outline of what activities will and will not take place", "incorrect": ["The specific roles each participant will take", "The location and duration of the scene", "The aftercare plan for after the scene"]}, {"question": "What is listed as an example of setting a limit in BDSM?", "correct": "Establishing certain types of play as prohibited and agreeing on a safeword", "incorrect": ["Agreeing on a specific location for the scene", "Setting a time limit for the session", "Choosing a dominant and submissive role"]}]}, {"label": "International Transgender Day of Visibility", "questions": [{"question": "When is International Transgender Day of Visibility held?", "correct": "March 31", "incorrect": ["June 28", "November 20", "February 14"]}, {"question": "What was the year of the first International Transgender Day of Visibility?", "correct": "2009", "incorrect": ["1999", "2015", "2005"]}, {"question": "Which organisation has spearheaded TDOV since its founding?", "correct": "Trans Student Educational Resources", "incorrect": ["GLAAD", "Human Rights Campaign", "The Trevor Project"]}]}, {"label": "No Limits", "questions": [{"question": "In which type of BDSM relationship is choosing 'no limits' most likely to be seen?", "correct": "Established relationships between committed partners", "incorrect": ["First-time encounters between strangers", "Professional BDSM arrangements", "Online BDSM relationships"]}, {"question": "In what kind of dynamic can 'no limits' occur?", "correct": "Total power exchange dynamics", "incorrect": ["Casual play dynamics", "Scene-only BDSM arrangements", "Online-only BDSM relationships"]}, {"question": "In wider kink and BDSM circles, particularly in casual play, what does 'no limits' commonly indicate?", "correct": "An unsafe play partner", "incorrect": ["An experienced and trustworthy partner", "A partner with extensive BDSM knowledge", "A partner open to exploring new activities"]}]}, {"label": "Women's Health", "questions": [{"question": "How does the WHO define health in the context of women's health?", "correct": "A state of complete physical, mental and social well-being, not merely the absence of disease", "incorrect": ["The absence of illness and access to adequate healthcare", "Physical fitness and freedom from chronic disease", "Access to reproductive healthcare and maternal services"]}, {"question": "What do many groups argue about women's health beyond reproductive health?", "correct": "It should be understood more broadly as 'the health of women'", "incorrect": ["It should be separated into physical and mental health categories", "It should be defined by international standards rather than national ones", "It should focus primarily on preventive care and screening"]}, {"question": "Where are differences in women's health further exacerbated?", "correct": "In developing countries", "incorrect": ["In conflict zones", "In rural and remote areas globally", "In countries without universal healthcare"]}]}, {"label": "Malala Yousafzai", "questions": [{"question": "What Nobel Prize did Malala Yousafzai receive and at what age?", "correct": "The Peace Prize in 2014 at age 17", "incorrect": ["The Peace Prize in 2012 at age 15", "The Peace Prize in 2015 at age 18", "The Literature Prize in 2014 at age 17"]}, {"question": "What did the Pakistani Taliban do in Malala's home district of Swat?", "correct": "Banned girls from attending school", "incorrect": ["Destroyed schools and educational facilities", "Prohibited women from working in education", "Forced girls to leave school at age 10"]}, {"question": "How has former prime minister Shahid Khaqan Abbasi described Malala?", "correct": "Pakistan's most prominent citizen", "incorrect": ["Pakistan's greatest ambassador for peace", "Pakistan's most celebrated activist", "Pakistan's leading human rights voice"]}]}];
 
+
 // Build lookup: label -> questions
 const quizLookup={};
 QUIZ_DATA.forEach(e=>{quizLookup[e.label]=e.questions;});
 
 // ── MODES ──
 const modes={punishment:false,punishmentPlus:false,slow:false,nobreaks:false,quiz:false};
-const BASIC_BREAK_GRACE_MS=4000;
-const TIMED_BREAK_GRACE_MS=4000;
+const NOBREAKS_TYPING_GRACE_DEFAULT_MS=3000;
+const NOBREAKS_TYPING_GRACE_MIN_MS=1000;
+const NOBREAKS_TYPING_GRACE_MAX_MS=10000;
 const NOBREAKS_RECOVERY_GRACE_MS=12000;
 const TIMED_BREAK_PENALTY_MINUTES=1;
 const TIMED_PUNISHMENT_PENALTY_MINUTES=1;
 const TIMED_PUNISHMENT_PLUS_PENALTY_MINUTES=3;
 const SLOW_KEY_INTERVAL_MS=1000;
+const ERROR_DOT_COLORS={mistake:'#ff9f40',punishment:'#ff3355',time:'#ffe135',quiz:'#7e22ce'};
+const ERROR_DOT_LABELS={mistake:'Mistake',punishment:'Punishment Penalty',time:'Time Penalty',quiz:'Quiz Error'};
+const TASK_DOT_COLOR='#ff4da6';
+const TASK_DOT_LABEL='Task Complete';
 let sessionMode='basic';
 let customLineTexts=[];
 let timedRequiredMs=0,timedDeadline=0,timedBreakTriggered=false;
@@ -702,6 +715,25 @@ function toggleMode(name){
   if(name==='quiz'&&(document.getElementById('useCustomLines').checked||sessionMode==='timed'))return;
   setMode(name,!modes[name]);
   refreshModeLocks();
+  updateNoBreaksPanelVisibility();
+}
+
+function updateNoBreaksPanelVisibility(){
+  const panel=document.getElementById('noBreaksPanel');
+  if(panel)panel.classList.toggle('hidden',!modes.nobreaks);
+}
+
+function onNoBreaksGraceInput(){
+  const value=Math.min(10,Math.max(1,parseInt(document.getElementById('noBreaksGrace').value)||3));
+  document.getElementById('noBreaksGraceLabel').textContent=value;
+  noBreaksTypingGraceMs=value*1000;
+}
+
+function setNoBreaksGraceSeconds(seconds){
+  const value=Math.min(10,Math.max(1,parseInt(seconds)||3));
+  document.getElementById('noBreaksGrace').value=value;
+  document.getElementById('noBreaksGraceLabel').textContent=value;
+  noBreaksTypingGraceMs=value*1000;
 }
 
 function refreshModeLocks(){
@@ -736,6 +768,7 @@ function selectSessionMode(name){
     noBreaksOption.classList.remove('locked');
     noBreaksOption.removeAttribute('aria-disabled');
   }
+  updateNoBreaksPanelVisibility();
   refreshModeLocks();
 }
 
@@ -781,10 +814,12 @@ let totalPunishments=0,prevInputLength=0,sentenceStartWords=[];
 let slowLastKeyTime=0;
 let noBreaksTimer=null,inactivityDeadline=0,totalInactivityPenalties=0;
 let noBreaksRecoveryActive=false;
+let noBreaksTypingGraceMs=NOBREAKS_TYPING_GRACE_DEFAULT_MS;
 let totalQuizShown=0,totalQuizPassed=0,totalQuizWrongAttempts=0;
 let totalPunishmentTimeMs=0;
 let quizTaskWpm=0,quizCountdownTimer=null,quizCountdownInterval=null,quizAnswered=false;
 let taskRecords=[],timelineEvents=[],gameId='',sessionElapsedMs=0,taskInProgress=false;
+let sessionDeviceType='Desktop';
 let wpmSamples=[],errorEvents=[],completedWordsBaseline=0,lastWpmSampleAt=-1;
 const SETTINGS_CODE_PREFIX='WFP1.';
 const SETTINGS_MODE_NAMES=['punishment','punishmentPlus','slow','nobreaks','quiz'];
@@ -813,6 +848,7 @@ function getSettingsPayload(){
     timedHours:parseInt(document.getElementById('timedHours').value)||0,
     timedMinutes:parseInt(document.getElementById('timedMinutes').value)||0,
     modes:Object.fromEntries(SETTINGS_MODE_NAMES.map(name=>[name,!!modes[name]])),
+    noBreaksGraceSeconds:parseInt(document.getElementById('noBreaksGrace').value)||3,
     useCustomLines:document.getElementById('useCustomLines').checked,
     customLines:document.getElementById('customLines').value
   };
@@ -838,6 +874,11 @@ function validateSettingsPayload(payload){
     throw new Error('The settings code selects both punishment modes.');
   if(payload.sessionMode==='timed'&&!payload.modes.nobreaks)
     throw new Error('Timed settings must include No Breaks.');
+  if(payload.noBreaksGraceSeconds===undefined){
+    payload.noBreaksGraceSeconds=3;
+  }else if(!Number.isInteger(payload.noBreaksGraceSeconds)||payload.noBreaksGraceSeconds<1||payload.noBreaksGraceSeconds>10){
+    throw new Error('The settings code has an invalid No Breaks grace period.');
+  }
   if(typeof payload.useCustomLines!=='boolean'||typeof payload.customLines!=='string')
     throw new Error('The settings code has invalid custom-line settings.');
   if(payload.customLines.length>50000)
@@ -911,7 +952,7 @@ function copySettingsCode(){
 
 function lockImportedSettings(){
   importedSettingsLocked=true;
-  document.querySelectorAll('.session-tab,.num-btn,#taskCount,#timedHours,#timedMinutes,.custom-line-toggle,#customLines,.mode-option').forEach(control=>{
+  document.querySelectorAll('.session-tab,.num-btn,#taskCount,#timedHours,#timedMinutes,.custom-line-toggle,#customLines,.mode-option,#noBreaksGrace').forEach(control=>{
     control.disabled=true;
     control.classList.add('locked');
     control.setAttribute('aria-disabled','true');
@@ -921,7 +962,7 @@ function lockImportedSettings(){
 
 function unlockImportedSettings(){
   importedSettingsLocked=false;
-  document.querySelectorAll('.session-tab,.num-btn,#taskCount,#timedHours,#timedMinutes,.custom-line-toggle,#customLines,.mode-option').forEach(control=>{
+  document.querySelectorAll('.session-tab,.num-btn,#taskCount,#timedHours,#timedMinutes,.custom-line-toggle,#customLines,.mode-option,#noBreaksGrace').forEach(control=>{
     control.disabled=false;
     control.classList.remove('locked');
     control.removeAttribute('aria-disabled');
@@ -952,8 +993,10 @@ function importSettings(settings = null){
     document.getElementById('customLines').value=payload.customLines;
     selectSessionMode(payload.sessionMode);
     SETTINGS_MODE_NAMES.forEach(name=>setMode(name,payload.modes[name]));
+    setNoBreaksGraceSeconds(payload.noBreaksGraceSeconds);
     toggleCustomLines();
     refreshModeLocks();
+    updateNoBreaksPanelVisibility();
     importedSettingsCode=result.code;
     document.getElementById('settingsCodeOutput').value=result.code;
     document.getElementById('settingsExportPanel').classList.remove('hidden');
@@ -973,8 +1016,10 @@ function resetToDefaultState(){
   SETTINGS_MODE_NAMES.forEach(name=>setMode(name,false));
   sessionMode='basic';
   selectSessionMode('basic');
+  setNoBreaksGraceSeconds(3);
   toggleCustomLines();
   refreshModeLocks();
+  updateNoBreaksPanelVisibility();
   document.getElementById('settingsCodeOutput').value='';
   document.getElementById('settingsImportInput').value='';
   document.getElementById('settingsExportPanel').classList.add('hidden');
@@ -1031,6 +1076,20 @@ function buildPool(needed,offset=0){
     result=result.concat(s.slice(0,Math.min(s.length,needed-result.length)));
   }
   return result;
+}
+
+function detectDeviceType(){
+  try{
+    if(navigator.userAgentData&&typeof navigator.userAgentData.mobile==='boolean'){
+      return navigator.userAgentData.mobile?'Mobile':'Desktop';
+    }
+  }catch(error){}
+  const ua=navigator.userAgent||'';
+  if(/Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua))return'Mobile';
+  try{
+    if(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches&&window.innerWidth<900)return'Mobile';
+  }catch(error){}
+  return'Desktop';
 }
 
 function createGameId(){
@@ -1107,6 +1166,7 @@ function startGame(){
   }
   current=0;totalErrors=0;totalPunishments=0;taskWpms=[];
   taskRecords=[];timelineEvents=[];sessionElapsedMs=0;gameId=createGameId();taskInProgress=false;
+  sessionDeviceType=detectDeviceType();
   wpmSamples=[];errorEvents=[];completedWordsBaseline=0;lastWpmSampleAt=-1;
 totalPunishmentTimeMs=0;
   slowLastKeyTime=0;totalInactivityPenalties=0;
@@ -1364,7 +1424,7 @@ function pauseNoBreaksTimer(){
 function resetNoBreaksTimer(){
   pauseNoBreaksTimer();
   timedBreakTriggered=false;
-  const grace=noBreaksRecoveryActive?NOBREAKS_RECOVERY_GRACE_MS:(sessionMode==='timed'?TIMED_BREAK_GRACE_MS:BASIC_BREAK_GRACE_MS);
+  const grace=noBreaksRecoveryActive?NOBREAKS_RECOVERY_GRACE_MS:noBreaksTypingGraceMs;
   noBreaksRecoveryActive=false;
   inactivityDeadline=Date.now()+grace;
   noBreaksTimer=setTimeout(checkInactivity,grace);
@@ -1631,14 +1691,58 @@ function proofSectionTitle(ctx,text,x,y,width){
   return y+52;
 }
 
-function wpmAtTime(atMs){
-  if(!wpmSamples.length)return 0;
-  if(atMs<=wpmSamples[0].at)return wpmSamples[0].wpm;
-  const last=wpmSamples[wpmSamples.length-1];
+const TIMELINE_MAX_POINTS=140;
+const TIMELINE_SMOOTH_RADIUS=2;
+
+// Reduces a raw sample series (taken every ~200ms) down to a fixed maximum
+// number of time-buckets, averaging the WPM within each bucket. This keeps
+// the point density — and therefore the visual smoothness — the same no
+// matter how long the session ran, instead of a multi-hour session cramming
+// thousands of noisy points into the same chart width.
+function resampleSeries(samples,maxPoints){
+  if(samples.length<=maxPoints)return samples.map(sample=>({at:sample.at,wpm:sample.wpm}));
+  const startAt=samples[0].at,endAt=samples[samples.length-1].at;
+  const span=Math.max(1,endAt-startAt);
+  const bucketSize=span/maxPoints;
+  const buckets=Array.from({length:maxPoints},()=>({atSum:0,wpmSum:0,count:0}));
+  samples.forEach(sample=>{
+    let idx=Math.floor((sample.at-startAt)/bucketSize);
+    if(idx<0)idx=0;if(idx>=maxPoints)idx=maxPoints-1;
+    const bucket=buckets[idx];
+    bucket.atSum+=sample.at;bucket.wpmSum+=sample.wpm;bucket.count++;
+  });
+  return buckets.filter(bucket=>bucket.count>0).map(bucket=>({at:bucket.atSum/bucket.count,wpm:bucket.wpmSum/bucket.count}));
+}
+
+// Light centered moving-average pass to settle per-second rounding jitter in
+// the WPM figure without flattening genuine speed changes.
+function smoothSeries(series,radius){
+  if(radius<=0||series.length<3)return series;
+  return series.map((point,index)=>{
+    let sum=0,count=0;
+    for(let j=Math.max(0,index-radius);j<=Math.min(series.length-1,index+radius);j++){
+      sum+=series[j].wpm;count++;
+    }
+    return {at:point.at,wpm:sum/count};
+  });
+}
+
+function prepareSmoothSeries(samples){
+  if(!samples.length)return[];
+  return smoothSeries(resampleSeries(samples,TIMELINE_MAX_POINTS),TIMELINE_SMOOTH_RADIUS);
+}
+
+// Linear interpolation against whatever series is passed in — used both for
+// the raw samples (not needed anymore) and the smoothed series, so error/task
+// dots line up with the curve that's actually being drawn.
+function interpolateSeriesAt(series,atMs){
+  if(!series.length)return 0;
+  if(atMs<=series[0].at)return series[0].wpm;
+  const last=series[series.length-1];
   if(atMs>=last.at)return last.wpm;
-  for(let i=1;i<wpmSamples.length;i++){
-    if(wpmSamples[i].at>=atMs){
-      const prev=wpmSamples[i-1],next=wpmSamples[i];
+  for(let i=1;i<series.length;i++){
+    if(series[i].at>=atMs){
+      const prev=series[i-1],next=series[i];
       const span=next.at-prev.at||1;
       const ratio=(atMs-prev.at)/span;
       return prev.wpm+(next.wpm-prev.wpm)*ratio;
@@ -1647,30 +1751,98 @@ function wpmAtTime(atMs){
   return last.wpm;
 }
 
+// Builds a smooth SVG path (cubic Bezier segments via Catmull-Rom control
+// points) through an arbitrary number of {x,y} points — the curve stays
+// equally smooth whether it's fed 5 points or 140.
+function buildSmoothSvgPath(points){
+  if(!points.length)return'';
+  if(points.length===1)return`M${points[0].x},${points[0].y}`;
+  if(points.length===2)return`M${points[0].x},${points[0].y} L${points[1].x},${points[1].y}`;
+  let d=`M${points[0].x},${points[0].y} `;
+  for(let i=0;i<points.length-1;i++){
+    const p0=points[i-1]||points[i];
+    const p1=points[i];
+    const p2=points[i+1];
+    const p3=points[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    d+=`C${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y} `;
+  }
+  return d;
+}
+
+// Canvas equivalent of buildSmoothSvgPath — draws the same Catmull-Rom-based
+// curve using bezierCurveTo, keeping the on-screen chart and the exported
+// PNG visually identical.
+function drawSmoothCanvasPath(ctx,points){
+  if(points.length<2)return;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x,points[0].y);
+  if(points.length===2){
+    ctx.lineTo(points[1].x,points[1].y);
+    return;
+  }
+  for(let i=0;i<points.length-1;i++){
+    const p0=points[i-1]||points[i];
+    const p1=points[i];
+    const p2=points[i+1];
+    const p3=points[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    ctx.bezierCurveTo(c1x,c1y,c2x,c2y,p2.x,p2.y);
+  }
+}
+
+function wpmAtTime(atMs){
+  return interpolateSeriesAt(wpmSamples,atMs);
+}
+
 function renderTimeline(){
   const chart=document.getElementById('timelineChart');
   const width=800,height=150,left=38,right=12,top=18,bottom=124;
   const maxAt=Math.max(sessionElapsedMs,1);
-  const penalties=timelineEvents.filter(event=>event.type==='penalty');
+  const punishmentActive=modes.punishment||modes.punishmentPlus;
+  const punishmentErrors=timelineEvents.filter(event=>event.type==='penalty'&&event.label!=='No Breaks');
+  const timeErrors=timelineEvents.filter(event=>event.type==='penalty'&&event.label==='No Breaks');
+  const quizErrors=timelineEvents.filter(event=>event.type==='quiz-error');
+  const taskCompletions=timelineEvents.filter(event=>event.type==='task');
   const maxSpeed=Math.max(1,...wpmSamples.map(sample=>sample.wpm||0));
   const xFor=at=>left+(Math.min(maxAt,Math.max(0,at))/maxAt)*(width-left-right);
   const yFor=wpm=>bottom-(Math.min(maxSpeed,Math.max(0,wpm||0))/maxSpeed)*(bottom-top);
+  const smoothWpmSeries=prepareSmoothSeries(wpmSamples);
   let markup=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Typing speed timeline">`;
   [0,0.5,1].forEach(ratio=>{
     const y=bottom-ratio*(bottom-top);
     markup+=`<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="rgba(240,232,240,0.11)" stroke-width="1"/>`;
     markup+=`<text x="0" y="${y+4}" fill="#7a6e7a" font-size="10" font-family="DM Mono, monospace">${Math.round(maxSpeed*ratio)}</text>`;
   });
-  penalties.forEach(event=>{
-    const x=xFor(event.at);
-    markup+=`<line x1="${x}" y1="${top}" x2="${x}" y2="${bottom}" stroke="rgba(255,51,85,0.55)" stroke-width="3"/>`;
-  });
   if(wpmSamples.length){
-    const points=wpmSamples.map(sample=>`${xFor(sample.at)},${yFor(sample.wpm)}`).join(' ');
-    markup+=`<polyline points="${points}" fill="none" stroke="#ff4da6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
-    errorEvents.forEach(event=>{
-      const x=xFor(event.at),y=yFor(wpmAtTime(event.at));
-      markup+=`<circle cx="${x}" cy="${y}" r="4.5" fill="#ff3355" stroke="#111014" stroke-width="1.5"/>`;
+    const curvePoints=smoothWpmSeries.map(point=>({x:xFor(point.at),y:yFor(point.wpm)}));
+    markup+=`<path d="${buildSmoothSvgPath(curvePoints)}" fill="none" stroke="#ff4da6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    taskCompletions.forEach(event=>{
+      const x=xFor(event.at),y=yFor(interpolateSeriesAt(smoothWpmSeries,event.at));
+      markup+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${TASK_DOT_COLOR}" fill-opacity="0.8" stroke="#111014" stroke-width="1"/>`;
+    });
+    // Plain mistakes only show as their own dot when Punishments mode is off —
+    // when Punishments is active every counted mistake already produces a
+    // punishment-penalty event, so the punishment dot takes priority instead.
+    if(!punishmentActive){
+      errorEvents.forEach(event=>{
+        const x=xFor(event.at),y=yFor(interpolateSeriesAt(smoothWpmSeries,event.at));
+        markup+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${ERROR_DOT_COLORS.mistake}" stroke="#111014" stroke-width="1.5"/>`;
+      });
+    }
+    punishmentErrors.forEach(event=>{
+      const x=xFor(event.at),y=yFor(interpolateSeriesAt(smoothWpmSeries,event.at));
+      markup+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${ERROR_DOT_COLORS.punishment}" stroke="#111014" stroke-width="1.5"/>`;
+    });
+    timeErrors.forEach(event=>{
+      const x=xFor(event.at),y=yFor(interpolateSeriesAt(smoothWpmSeries,event.at));
+      markup+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${ERROR_DOT_COLORS.time}" stroke="#111014" stroke-width="1.5"/>`;
+    });
+    quizErrors.forEach(event=>{
+      const x=xFor(event.at),y=yFor(interpolateSeriesAt(smoothWpmSeries,event.at));
+      markup+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${ERROR_DOT_COLORS.quiz}" stroke="#111014" stroke-width="1.5"/>`;
     });
   }else{
     markup+=`<text x="${width/2}" y="78" text-anchor="middle" fill="#7a6e7a" font-size="12" font-family="DM Mono, monospace">No typing data recorded</text>`;
@@ -1681,18 +1853,21 @@ function renderTimeline(){
   markup+='</svg>';
   chart.innerHTML=markup;
 
-  const eventList=document.getElementById('timelineEvents');
-  eventList.innerHTML='';
-  const visibleEvents=timelineEvents.filter(event=>event.type!=='start');
-  if(!visibleEvents.length){
-    const empty=document.createElement('span');empty.className='timeline-event';empty.textContent='Session started';eventList.appendChild(empty);
-  }else visibleEvents.forEach(event=>{
-    const item=document.createElement('span');
-    item.className='timeline-event '+(event.type==='task'?'task':event.type==='penalty'?'penalty':'error');
-    if(event.type==='task')item.textContent='#'+event.number+' '+event.wpm+' WPM · '+event.errors+' err';
-    else item.textContent=event.label+' · '+event.kind;
-    eventList.appendChild(item);
+  const legend=document.getElementById('timelineLegend');
+  legend.innerHTML='';
+  const legendKeys=punishmentActive?['punishment','time','quiz']:['mistake','time','quiz'];
+  legendKeys.forEach(key=>{
+    const item=document.createElement('span');item.className='legend-item';
+    const dot=document.createElement('span');dot.className='legend-dot';dot.style.background=ERROR_DOT_COLORS[key];
+    const label=document.createElement('span');label.textContent=ERROR_DOT_LABELS[key];
+    item.append(dot,label);legend.appendChild(item);
   });
+  const taskItem=document.createElement('span');taskItem.className='legend-item';
+  const taskDot=document.createElement('span');taskDot.className='legend-dot';taskDot.style.background=TASK_DOT_COLOR;
+  const taskLabel=document.createElement('span');taskLabel.textContent=TASK_DOT_LABEL;
+  taskItem.append(taskDot,taskLabel);legend.appendChild(taskItem);
+
+  const penalties=[...punishmentErrors,...timeErrors];
   const tasks=timelineEvents.filter(event=>event.type==='task');
   document.getElementById('timelineMeta').textContent=tasks.length+' task'+(tasks.length!==1?'s':'')+' · peak '+Math.round(maxSpeed)+' WPM · '+penalties.length+' event'+(penalties.length!==1?'s':'');
 }
@@ -1709,7 +1884,7 @@ function renderModeStats(finalErrors){
   const sessionLabel=sessionMode==='timed'
     ? 'Timed · '+formatClock(timedRequiredMs)+' target'
     : 'Basic · '+total+' task target';
-  addModeStatCard(sessionLabel,'<strong>'+taskRecords.length+'</strong> completed · <strong>'+finalErrors+'</strong> typing error'+(finalErrors!==1?'s':''));
+  addModeStatCard(sessionLabel,'<strong>'+taskRecords.length+'</strong> completed · <strong>'+finalErrors+'</strong> typing error'+(finalErrors!==1?'s':'')+' · <strong>'+sessionDeviceType+'</strong>');
   if(customLineTexts.length)
     addModeStatCard('Custom Lines','<strong>'+customLineTexts.length+'</strong> unique lines · <strong>'+taskRecords.length+'</strong> typed repetitions');
   if(modes.punishment)
@@ -1722,7 +1897,7 @@ function renderModeStats(finalErrors){
     const added=sessionMode==='timed'
       ? Math.round(totalInactivityPenalties*TIMED_BREAK_PENALTY_MINUTES)+' min'
       : totalInactivityPenalties+' task'+(totalInactivityPenalties!==1?'s':'');
-    addModeStatCard('No Breaks','<strong>'+totalInactivityPenalties+'</strong> inactivity penalty'+(totalInactivityPenalties!==1?'ies':'y')+' · <strong>'+added+'</strong> added');
+    addModeStatCard('No Breaks','<strong>'+totalInactivityPenalties+'</strong> inactivity penalt'+(totalInactivityPenalties!==1?'ies':'y')+' · <strong>'+added+'</strong> added');
   }
   if(modes.quiz){
     const rate=totalQuizShown?Math.round(totalQuizPassed/totalQuizShown*100):0;
@@ -1802,9 +1977,9 @@ function endGame(){
   switchScreen('end');
 }
 
-function exportProof(){
-  const status=document.getElementById('proofStatus');
-  status.textContent='Preparing proof image…';
+let proofBusy=false;
+
+function buildProofCanvas(){
   const groupedTasks=[];
   const groupedMap=new Map();
   taskRecords.forEach(record=>{
@@ -1849,10 +2024,14 @@ function exportProof(){
       y+=22;ctx.fillStyle='#f0e8f0';ctx.font='12px "DM Mono", monospace';
       y+=proofDrawWrapped(ctx,importedSettingsCode,pad,y,innerWidth,18,'12px "DM Mono", monospace','#f0e8f0')+12;
     }
-    proofRoundRect(ctx,pad,y,innerWidth,210,12,'#1a1820','rgba(255,77,166,0.28)');
+    proofRoundRect(ctx,pad,y,innerWidth,236,12,'#1a1820','rgba(255,77,166,0.28)');
     ctx.fillStyle='#f0e8f0';ctx.font='500 16px "DM Mono", monospace';ctx.fillText('SESSION TIMELINE',pad+20,y+28);
-    const chartLeft=pad+66,chartRight=width-pad-24,chartTop=y+56,chartBottom=y+166;
-    const proofPenalties=timelineEvents.filter(event=>event.type==='penalty');
+    const chartLeft=pad+66,chartRight=width-pad-24,chartTop=y+56,chartBottom=y+150;
+    const proofPunishmentActive=modes.punishment||modes.punishmentPlus;
+    const proofPunishmentErrors=timelineEvents.filter(event=>event.type==='penalty'&&event.label!=='No Breaks');
+    const proofTimeErrors=timelineEvents.filter(event=>event.type==='penalty'&&event.label==='No Breaks');
+    const proofQuizErrors=timelineEvents.filter(event=>event.type==='quiz-error');
+    const proofTaskCompletions=timelineEvents.filter(event=>event.type==='task');
     const maxAt=Math.max(sessionElapsedMs,1),maxSpeed=Math.max(1,...wpmSamples.map(sample=>sample.wpm||0));
     const proofXFor=at=>chartLeft+(Math.min(maxAt,Math.max(0,at))/maxAt)*(chartRight-chartLeft);
     const proofYFor=wpm=>chartBottom-(Math.min(maxSpeed,Math.max(0,wpm||0))/maxSpeed)*(chartBottom-chartTop);
@@ -1861,29 +2040,54 @@ function exportProof(){
       ctx.strokeStyle='rgba(240,232,240,0.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(chartLeft,lineY);ctx.lineTo(chartRight,lineY);ctx.stroke();
       ctx.fillStyle='#7a6e7a';ctx.font='11px "DM Mono", monospace';ctx.fillText(Math.round(maxSpeed*ratio),pad+20,lineY+4);
     });
-    proofPenalties.forEach(event=>{
-      const x=proofXFor(event.at);
-      ctx.strokeStyle='rgba(255,51,85,0.55)';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x,chartTop);ctx.lineTo(x,chartBottom);ctx.stroke();
-    });
     if(wpmSamples.length){
-      const points=wpmSamples.map(sample=>[proofXFor(sample.at),proofYFor(sample.wpm)]);
-      ctx.strokeStyle='#ff4da6';ctx.lineWidth=3;ctx.beginPath();points.forEach((point,index)=>index?ctx.lineTo(point[0],point[1]):ctx.moveTo(point[0],point[1]));ctx.stroke();
-      errorEvents.forEach(event=>{
-        const x=proofXFor(event.at),y2=proofYFor(wpmAtTime(event.at));
-        ctx.fillStyle='#ff3355';ctx.strokeStyle='#111014';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y2,5,0,Math.PI*2);ctx.fill();ctx.stroke();
+      const proofSmoothSeries=prepareSmoothSeries(wpmSamples);
+      const points=proofSmoothSeries.map(point=>({x:proofXFor(point.at),y:proofYFor(point.wpm)}));
+      ctx.strokeStyle='#ff4da6';ctx.lineWidth=3;
+      drawSmoothCanvasPath(ctx,points);
+      ctx.stroke();
+      const drawErrorDot=(x,y2,color,radius)=>{ctx.fillStyle=color;ctx.strokeStyle='#111014';ctx.lineWidth=radius>4?1.5:1;ctx.beginPath();ctx.arc(x,y2,radius,0,Math.PI*2);ctx.fill();ctx.stroke();};
+      proofTaskCompletions.forEach(event=>{
+        drawErrorDot(proofXFor(event.at),proofYFor(interpolateSeriesAt(proofSmoothSeries,event.at)),TASK_DOT_COLOR,3.5);
       });
-    }else{ctx.fillStyle='#7a6e7a';ctx.font='13px "DM Mono", monospace';ctx.textAlign='center';ctx.fillText('No typing data recorded',width/2,y+115);ctx.textAlign='left';}
-    ctx.fillStyle='#7a6e7a';ctx.font='11px "DM Mono", monospace';ctx.fillText('0:00',chartLeft,chartBottom+25);ctx.textAlign='right';ctx.fillText(formatClock(sessionElapsedMs),chartRight,chartBottom+25);ctx.textAlign='left';
-    y+=232;
+      // Plain mistakes only get their own dot when Punishments mode is off — when
+      // Punishments is active every counted mistake already triggers a punishment
+      // penalty event, so the punishment dot takes priority instead.
+      if(!proofPunishmentActive){
+        errorEvents.forEach(event=>{
+          drawErrorDot(proofXFor(event.at),proofYFor(interpolateSeriesAt(proofSmoothSeries,event.at)),ERROR_DOT_COLORS.mistake,5);
+        });
+      }
+      proofPunishmentErrors.forEach(event=>{
+        drawErrorDot(proofXFor(event.at),proofYFor(interpolateSeriesAt(proofSmoothSeries,event.at)),ERROR_DOT_COLORS.punishment,5);
+      });
+      proofTimeErrors.forEach(event=>{
+        drawErrorDot(proofXFor(event.at),proofYFor(interpolateSeriesAt(proofSmoothSeries,event.at)),ERROR_DOT_COLORS.time,5);
+      });
+      proofQuizErrors.forEach(event=>{
+        drawErrorDot(proofXFor(event.at),proofYFor(interpolateSeriesAt(proofSmoothSeries,event.at)),ERROR_DOT_COLORS.quiz,5);
+      });
+    }else{ctx.fillStyle='#7a6e7a';ctx.font='13px "DM Mono", monospace';ctx.textAlign='center';ctx.fillText('No typing data recorded',width/2,y+105);ctx.textAlign='left';}
+    ctx.fillStyle='#7a6e7a';ctx.font='11px "DM Mono", monospace';ctx.fillText('0:00',chartLeft,chartBottom+22);ctx.textAlign='right';ctx.fillText(formatClock(sessionElapsedMs),chartRight,chartBottom+22);ctx.textAlign='left';
+    let legendX=chartLeft;const legendY=chartBottom+46;
+    const proofLegendKeys=proofPunishmentActive?['punishment','time','quiz']:['mistake','time','quiz'];
+    proofLegendKeys.forEach(key=>{
+      ctx.fillStyle=ERROR_DOT_COLORS[key];ctx.beginPath();ctx.arc(legendX+4,legendY-4,4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#7a6e7a';ctx.font='11px "DM Mono", monospace';ctx.fillText(ERROR_DOT_LABELS[key],legendX+14,legendY);
+      legendX+=14+ctx.measureText(ERROR_DOT_LABELS[key]).width+22;
+    });
+    ctx.fillStyle=TASK_DOT_COLOR;ctx.beginPath();ctx.arc(legendX+4,legendY-4,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#7a6e7a';ctx.font='11px "DM Mono", monospace';ctx.fillText(TASK_DOT_LABEL,legendX+14,legendY);
+    y+=258;
 
     y=proofSectionTitle(ctx,'02 / MODES CHOSEN + STATS',pad,y,innerWidth);
     const modeLines=[];
-    modeLines.push([(sessionMode==='timed'?'Timed':'Basic'),sessionMode==='timed'?formatClock(timedRequiredMs)+' target · '+taskRecords.length+' completed':total+' task target · '+taskRecords.length+' completed']);
+    modeLines.push([(sessionMode==='timed'?'Timed':'Basic'),(sessionMode==='timed'?formatClock(timedRequiredMs)+' target · '+taskRecords.length+' completed':total+' task target · '+taskRecords.length+' completed')+' · '+sessionDeviceType]);
     if(customLineTexts.length)modeLines.push(['Custom Lines',customLineTexts.length+' unique lines · '+taskRecords.length+' typed repetitions']);
     if(modes.punishment)modeLines.push(['Punishments',totalPunishments+' sentence reset'+(totalPunishments!==1?'s':'')]);
     if(modes.punishmentPlus)modeLines.push(['Punishments+',totalPunishments+' task reset'+(totalPunishments!==1?'s':'')]);
     if(modes.slow)modeLines.push(['Slow Mode','1 key / second input limit']);
-    if(modes.nobreaks)modeLines.push(['No Breaks',totalInactivityPenalties+' inactivity penalty'+(totalInactivityPenalties!==1?'ies':'y')+' · '+(sessionMode==='timed'?Math.round(totalInactivityPenalties*TIMED_BREAK_PENALTY_MINUTES)+' min':totalInactivityPenalties+' task'+(totalInactivityPenalties!==1?'s':'') )+' added']);
+    if(modes.nobreaks)modeLines.push(['No Breaks',totalInactivityPenalties+' inactivity penalt'+(totalInactivityPenalties!==1?'ies':'y')+' · '+(sessionMode==='timed'?Math.round(totalInactivityPenalties*TIMED_BREAK_PENALTY_MINUTES)+' min':totalInactivityPenalties+' task'+(totalInactivityPenalties!==1?'s':'') )+' added']);
     if(modes.quiz)modeLines.push(['Quiz',totalQuizPassed+'/'+totalQuizShown+' passed · '+totalQuizWrongAttempts+' failed attempts']);
     const modeGap=12,modeWidth=(innerWidth-modeGap)/2;
     modeLines.forEach((mode,index)=>{
@@ -1919,13 +2123,74 @@ function exportProof(){
   const canvas=document.createElement('canvas');
   const scale=2;canvas.width=width*scale;canvas.height=Math.ceil((usedHeight+20)*scale);
   const ctx=canvas.getContext('2d');ctx.scale(scale,scale);drawProof(ctx);
-  canvas.toBlob(blob=>{
-    if(!blob){status.textContent='Unable to create PNG in this browser.';return;}
-    const url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download='WriteForPerfection-'+gameId+'.png';document.body.appendChild(link);link.click();link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
-    status.textContent='Proof PNG downloaded.';
-  },'image/png');
+  return canvas;
+}
+
+function canvasToBlobAsync(canvas){
+  return new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+}
+
+function exportProof(){
+  if(proofBusy)return;
+  proofBusy=true;
+  const status=document.getElementById('proofStatus');
+  const btn=document.getElementById('exportProofBtn');
+  const copyBtn=document.getElementById('copyProofBtn');
+  if(btn)btn.disabled=true;
+  if(copyBtn)copyBtn.disabled=true;
+  status.textContent='Preparing proof image…';
+  Promise.resolve()
+    .then(()=>buildProofCanvas())
+    .then(canvas=>canvasToBlobAsync(canvas))
+    .then(blob=>{
+      if(!blob){status.textContent='Unable to create PNG in this browser.';return;}
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download='WriteForPerfection-'+gameId+'.png';document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+      status.textContent='Proof PNG downloaded.';
+    })
+    .catch(()=>{status.textContent='Unable to create PNG in this browser.';})
+    .finally(()=>{
+      proofBusy=false;
+      if(btn)btn.disabled=false;
+      if(copyBtn)copyBtn.disabled=false;
+    });
+}
+
+function copyProofToClipboard(){
+  if(proofBusy)return;
+  const status=document.getElementById('proofStatus');
+  if(typeof ClipboardItem==='undefined'||!navigator.clipboard||!navigator.clipboard.write){
+    status.textContent='Clipboard image copy is not supported in this browser — use Export instead.';
+    return;
+  }
+  proofBusy=true;
+  const btn=document.getElementById('exportProofBtn');
+  const copyBtn=document.getElementById('copyProofBtn');
+  if(btn)btn.disabled=true;
+  if(copyBtn)copyBtn.disabled=true;
+  status.textContent='Preparing proof image…';
+
+  // Build the blob promise, but call clipboard.write() synchronously (right now, inside
+  // the click handler) with a pending ClipboardItem — some browsers (notably Safari)
+  // require the write() call itself to happen within the user-gesture window, and will
+  // silently fail if we instead await the blob first and call write() afterward.
+  const blobPromise=Promise.resolve()
+    .then(()=>buildProofCanvas())
+    .then(canvas=>canvasToBlobAsync(canvas))
+    .then(blob=>{
+      if(!blob)throw new Error('No blob produced');
+      return blob;
+    });
+
+  navigator.clipboard.write([new ClipboardItem({'image/png':blobPromise})])
+    .then(()=>{status.textContent='Proof image copied to clipboard.';})
+    .catch(()=>{status.textContent='Unable to copy the image — try Export instead.';})
+    .finally(()=>{
+      proofBusy=false;
+      if(btn)btn.disabled=false;
+      if(copyBtn)copyBtn.disabled=false;
+    });
 }
 
 function restartGame(){
