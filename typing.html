@@ -573,6 +573,7 @@ document.getElementById('inputBox').addEventListener('focus',()=>{
   if(window.innerWidth<=600)window.scrollTo(0,0);
 });
 
+// ── PLACEHOLDER TEST DATA (small, for dev use — swap back in real content later) ──
 const ALL_TEXTS=[
   {label:"Simone de Beauvoir",content:`Simone de Beauvoir was a French writer, feminist, social theorist, and existential philosopher. She is best known for her groundbreaking ideas surrounding feminism. In her 1949 book "The Second Sex", Beauvoir asserted that women are as capable of choice as men, and thus can choose to elevate themselves, moving beyond the "immanence" to which they were previously resigned and reaching "transcendence", a position in which one takes responsibility for oneself and the world, where one chooses one's freedom. She wrote, "One is not born, but rather becomes, a woman... her wings are cut and then she is blamed for not knowing how to fly."`},
   {label:"RACK",content:`RACK stands for Risk Aware Consensual Kink. Rather than prohibit injury, RACK encourages risk awareness. To be risk aware within BDSM means participants acknowledge that their sexual activities may have physical risks like bruises or burns, mental risks like stress and anguish, as well as emotional risks like humiliation. Beyond risk awareness, the C in RACK stands for consensual. For sex to be consensual, all parties involved need to enthusiastically agree, in a comfortable environment safe from coercion, to all activities that are going to take place. There should be a conversation prior to sex in which every individual establishes their boundaries and agrees upon a safeword.`},
@@ -814,6 +815,7 @@ let totalPunishments=0,prevInputLength=0,sentenceStartWords=[];
 let slowLastKeyTime=0;
 let noBreaksTimer=null,inactivityDeadline=0,totalInactivityPenalties=0;
 let noBreaksRecoveryActive=false;
+let noBreaksSessionStarted=false;
 let noBreaksTypingGraceMs=NOBREAKS_TYPING_GRACE_DEFAULT_MS;
 let totalQuizShown=0,totalQuizPassed=0,totalQuizWrongAttempts=0;
 let totalPunishmentTimeMs=0;
@@ -1110,7 +1112,7 @@ function sampleSessionWpm(currentTaskWordsTyped){
   const totalWords=completedWordsBaseline+Math.max(0,currentTaskWordsTyped||0);
   const minutes=at/60000;
   const wpm=minutes>0.02?Math.round(totalWords/minutes):0;
-  wpmSamples.push({at,wpm});
+  wpmSamples.push({at,wpm,words:totalWords});
 }
 
 function recordTimelineEvent(type,details={}){
@@ -1177,6 +1179,7 @@ totalPunishmentTimeMs=0;
   if(noBreaksTimer){clearTimeout(noBreaksTimer);noBreaksTimer=null;}
   inactivityDeadline=0;
   noBreaksRecoveryActive=false;
+  noBreaksSessionStarted=false;
   startTime=Date.now();
   recordTimelineEvent('start',{label:'Session started',wpm:0,errors:0});
   timedDeadline=sessionMode==='timed'?startTime+timedRequiredMs:0;
@@ -1214,7 +1217,10 @@ function loadText(preserveErrors=false){
   taskStartTime=preserveErrors?taskStartTime:Date.now();
   prevInputLength=0;slowLastKeyTime=0;
   if(modes.nobreaks){
-    noBreaksRecoveryActive=true;
+    // The 12-second grace period applies only at the start of the session and
+    // after a reset. Every following task uses the chosen typing grace period.
+    if(!noBreaksSessionStarted||preserveErrors)noBreaksRecoveryActive=true;
+    noBreaksSessionStarted=true;
     resetNoBreaksTimer();
   }
   if(!preserveErrors){
@@ -1691,50 +1697,90 @@ function proofSectionTitle(ctx,text,x,y,width){
   return y+52;
 }
 
-const TIMELINE_MAX_POINTS=140;
-const TIMELINE_SMOOTH_RADIUS=2;
+const TIMELINE_MAX_POINTS=180;
+const TIMELINE_STEP_MS=250;
+// Rolling window used to turn the cumulative word count into an instantaneous
+// typing speed. Short enough that individual bursts and pauses still show up as
+// peaks and troughs (the heartbeat), long enough that single keystrokes don't
+// spike the line into noise.
+const TIMELINE_WINDOW_MS=4000;
+const TIMELINE_SMOOTH_WEIGHTS=[1,2,3,2,1];
 
-// Reduces a raw sample series (taken every ~200ms) down to a fixed maximum
-// number of time-buckets, averaging the WPM within each bucket. This keeps
-// the point density — and therefore the visual smoothness — the same no
-// matter how long the session ran, instead of a multi-hour session cramming
-// thousands of noisy points into the same chart width.
-function resampleSeries(samples,maxPoints){
-  if(samples.length<=maxPoints)return samples.map(sample=>({at:sample.at,wpm:sample.wpm}));
-  const startAt=samples[0].at,endAt=samples[samples.length-1].at;
-  const span=Math.max(1,endAt-startAt);
-  const bucketSize=span/maxPoints;
-  const buckets=Array.from({length:maxPoints},()=>({atSum:0,wpmSum:0,count:0}));
-  samples.forEach(sample=>{
-    let idx=Math.floor((sample.at-startAt)/bucketSize);
-    if(idx<0)idx=0;if(idx>=maxPoints)idx=maxPoints-1;
-    const bucket=buckets[idx];
-    bucket.atSum+=sample.at;bucket.wpmSum+=sample.wpm;bucket.count++;
-  });
-  return buckets.filter(bucket=>bucket.count>0).map(bucket=>({at:bucket.atSum/bucket.count,wpm:bucket.wpmSum/bucket.count}));
-}
-
-// Light centered moving-average pass to settle per-second rounding jitter in
-// the WPM figure without flattening genuine speed changes.
-function smoothSeries(series,radius){
-  if(radius<=0||series.length<3)return series;
-  return series.map((point,index)=>{
-    let sum=0,count=0;
-    for(let j=Math.max(0,index-radius);j<=Math.min(series.length-1,index+radius);j++){
-      sum+=series[j].wpm;count++;
+// Cumulative words typed at an arbitrary moment, linearly interpolated between
+// samples. Samples are only recorded while the player is actually typing, so
+// this is what lets the chart treat a silent gap as "no words added" rather
+// than guessing a value for it.
+function wordsTypedAt(series,atMs){
+  if(!series.length)return 0;
+  if(atMs<=series[0].at)return series[0].words*(series[0].at>0?Math.max(0,atMs)/series[0].at:1);
+  const last=series[series.length-1];
+  if(atMs>=last.at)return last.words;
+  for(let i=1;i<series.length;i++){
+    if(series[i].at>=atMs){
+      const prev=series[i-1],next=series[i];
+      const span=next.at-prev.at||1;
+      return prev.words+(next.words-prev.words)*((atMs-prev.at)/span);
     }
-    return {at:point.at,wpm:sum/count};
+  }
+  return last.words;
+}
+
+// Punishment resets wipe part of the current task's input, which can make the
+// running word count dip. Clamping it to a running maximum keeps the series
+// monotonic so a reset reads as a flat stretch instead of a fake dip followed
+// by a fake spike.
+function monotonicWordSeries(samples){
+  let peak=0;
+  return samples.map(sample=>{
+    const words=Number.isFinite(sample.words)?sample.words:(sample.wpm||0)*(sample.at/60000);
+    peak=Math.max(peak,words);
+    return {at:sample.at,words:peak};
   });
 }
 
-function prepareSmoothSeries(samples){
-  if(!samples.length)return[];
-  return smoothSeries(resampleSeries(samples,TIMELINE_MAX_POINTS),TIMELINE_SMOOTH_RADIUS);
+// Weighted centred smoothing on a uniform grid. Because every point is the same
+// distance apart, a fixed kernel behaves identically everywhere on the chart —
+// the old version smoothed unevenly spaced buckets, which is what made the line
+// kink and overshoot around gaps in play.
+function smoothSeries(series,weights){
+  if(series.length<3)return series;
+  const radius=(weights.length-1)/2;
+  return series.map((point,index)=>{
+    let sum=0,total=0;
+    for(let offset=-radius;offset<=radius;offset++){
+      const neighbour=series[index+offset];
+      if(!neighbour)continue;
+      const weight=weights[offset+radius];
+      sum+=neighbour.wpm*weight;total+=weight;
+    }
+    return {at:point.at,wpm:total?sum/total:point.wpm};
+  });
 }
 
-// Linear interpolation against whatever series is passed in — used both for
-// the raw samples (not needed anymore) and the smoothed series, so error/task
-// dots line up with the curve that's actually being drawn.
+// Resamples the recorded samples onto an evenly spaced time grid and converts
+// them from a cumulative session average (which only ever crept along) into a
+// rolling live speed, so the line actually rises and falls with how fast the
+// player was typing at that moment.
+function prepareSmoothSeries(samples,totalMs){
+  if(!samples.length)return[];
+  const words=monotonicWordSeries(samples);
+  const span=Math.max(1,totalMs||words[words.length-1].at||1);
+  const count=Math.max(2,Math.min(TIMELINE_MAX_POINTS,Math.round(span/TIMELINE_STEP_MS)+1));
+  const step=span/(count-1);
+  const window=Math.max(TIMELINE_WINDOW_MS,step*3);
+  const grid=[];
+  for(let i=0;i<count;i++){
+    const at=i*step;
+    const from=Math.max(0,at-window);
+    const minutes=(at-from)/60000;
+    const typed=wordsTypedAt(words,at)-wordsTypedAt(words,from);
+    grid.push({at,wpm:minutes>0?Math.max(0,typed/minutes):0});
+  }
+  return smoothSeries(grid,TIMELINE_SMOOTH_WEIGHTS);
+}
+
+// Linear interpolation against whatever series is passed in, used to drop the
+// error / task markers exactly onto the curve that's being drawn.
 function interpolateSeriesAt(series,atMs){
   if(!series.length)return 0;
   if(atMs<=series[0].at)return series[0].wpm;
@@ -1751,46 +1797,61 @@ function interpolateSeriesAt(series,atMs){
   return last.wpm;
 }
 
-// Builds a smooth SVG path (cubic Bezier segments via Catmull-Rom control
-// points) through an arbitrary number of {x,y} points — the curve stays
-// equally smooth whether it's fed 5 points or 140.
+// Monotone cubic Hermite segments (Fritsch-Carlson style tangent limiting).
+// A plain Catmull-Rom curve overshoots on sharp peaks — it loops above the
+// highest point and dips below zero after it — which is exactly the wobble that
+// made the old chart look broken. Flattening the tangent at every local
+// extremum keeps the curve inside the data while staying visually smooth.
+function buildCurveSegments(points){
+  if(points.length<2)return[];
+  const tangents=points.map((point,index)=>{
+    const prev=points[index-1],next=points[index+1];
+    if(!prev||!next)return 0;
+    const before=point.y-prev.y,after=next.y-point.y;
+    if(before*after<=0)return 0;
+    const slope=(next.y-prev.y)/2;
+    const limit=Math.min(Math.abs(before),Math.abs(after))*1.5;
+    return Math.sign(slope)*Math.min(Math.abs(slope),limit);
+  });
+  const segments=[];
+  for(let i=0;i<points.length-1;i++){
+    const p1=points[i],p2=points[i+1];
+    const dx=(p2.x-p1.x)/3;
+    segments.push({
+      c1x:p1.x+dx,c1y:p1.y+tangents[i]/3,
+      c2x:p2.x-dx,c2y:p2.y-tangents[i+1]/3,
+      x:p2.x,y:p2.y
+    });
+  }
+  return segments;
+}
+
 function buildSmoothSvgPath(points){
   if(!points.length)return'';
-  if(points.length===1)return`M${points[0].x},${points[0].y}`;
-  if(points.length===2)return`M${points[0].x},${points[0].y} L${points[1].x},${points[1].y}`;
-  let d=`M${points[0].x},${points[0].y} `;
-  for(let i=0;i<points.length-1;i++){
-    const p0=points[i-1]||points[i];
-    const p1=points[i];
-    const p2=points[i+1];
-    const p3=points[i+2]||p2;
-    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
-    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
-    d+=`C${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y} `;
-  }
+  let d=`M${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  buildCurveSegments(points).forEach(segment=>{
+    d+=` C${segment.c1x.toFixed(2)},${segment.c1y.toFixed(2)} ${segment.c2x.toFixed(2)},${segment.c2y.toFixed(2)} ${segment.x.toFixed(2)},${segment.y.toFixed(2)}`;
+  });
   return d;
 }
 
-// Canvas equivalent of buildSmoothSvgPath — draws the same Catmull-Rom-based
-// curve using bezierCurveTo, keeping the on-screen chart and the exported
-// PNG visually identical.
+// Canvas equivalent of buildSmoothSvgPath — same segments, so the on-screen
+// chart and the exported PNG stay pixel-for-pixel the same shape.
 function drawSmoothCanvasPath(ctx,points){
   if(points.length<2)return;
   ctx.beginPath();
   ctx.moveTo(points[0].x,points[0].y);
-  if(points.length===2){
-    ctx.lineTo(points[1].x,points[1].y);
-    return;
-  }
-  for(let i=0;i<points.length-1;i++){
-    const p0=points[i-1]||points[i];
-    const p1=points[i];
-    const p2=points[i+1];
-    const p3=points[i+2]||p2;
-    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
-    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
-    ctx.bezierCurveTo(c1x,c1y,c2x,c2y,p2.x,p2.y);
-  }
+  buildCurveSegments(points).forEach(segment=>{
+    ctx.bezierCurveTo(segment.c1x,segment.c1y,segment.c2x,segment.c2y,segment.x,segment.y);
+  });
+}
+
+// Rounds the top of the axis up to a friendly number with a little headroom, so
+// the peak of the trace never touches the ceiling of the chart.
+function timelineAxisMax(series){
+  const peak=Math.max(1,...series.map(point=>point.wpm||0));
+  const step=peak>200?25:peak>80?10:5;
+  return Math.max(step*2,Math.ceil((peak*1.12)/step)*step);
 }
 
 function wpmAtTime(atMs){
@@ -1806,22 +1867,29 @@ function renderTimeline(){
   const timeErrors=timelineEvents.filter(event=>event.type==='penalty'&&event.label==='No Breaks');
   const quizErrors=timelineEvents.filter(event=>event.type==='quiz-error');
   const taskCompletions=timelineEvents.filter(event=>event.type==='task');
-  const maxSpeed=Math.max(1,...wpmSamples.map(sample=>sample.wpm||0));
+  const smoothWpmSeries=prepareSmoothSeries(wpmSamples,sessionElapsedMs);
+  const maxSpeed=timelineAxisMax(smoothWpmSeries);
   const xFor=at=>left+(Math.min(maxAt,Math.max(0,at))/maxAt)*(width-left-right);
   const yFor=wpm=>bottom-(Math.min(maxSpeed,Math.max(0,wpm||0))/maxSpeed)*(bottom-top);
-  const smoothWpmSeries=prepareSmoothSeries(wpmSamples);
   let markup=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Typing speed timeline">`;
-  [0,0.5,1].forEach(ratio=>{
+  markup+=`<defs><linearGradient id="tlFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff4da6" stop-opacity="0.28"/><stop offset="100%" stop-color="#ff4da6" stop-opacity="0"/></linearGradient><filter id="tlGlow" x="-8%" y="-40%" width="116%" height="180%"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  [0,0.25,0.5,0.75,1].forEach(ratio=>{
     const y=bottom-ratio*(bottom-top);
-    markup+=`<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="rgba(240,232,240,0.11)" stroke-width="1"/>`;
-    markup+=`<text x="0" y="${y+4}" fill="#7a6e7a" font-size="10" font-family="DM Mono, monospace">${Math.round(maxSpeed*ratio)}</text>`;
+    const major=ratio===0||ratio===0.5||ratio===1;
+    markup+=`<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="rgba(240,232,240,${major?0.11:0.05})" stroke-width="1"/>`;
+    if(major)markup+=`<text x="0" y="${y+4}" fill="#7a6e7a" font-size="10" font-family="DM Mono, monospace">${Math.round(maxSpeed*ratio)}</text>`;
   });
   if(wpmSamples.length){
     const curvePoints=smoothWpmSeries.map(point=>({x:xFor(point.at),y:yFor(point.wpm)}));
-    markup+=`<path d="${buildSmoothSvgPath(curvePoints)}" fill="none" stroke="#ff4da6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const curve=buildSmoothSvgPath(curvePoints);
+    const first=curvePoints[0],last=curvePoints[curvePoints.length-1];
+    markup+=`<path d="${curve} L${last.x.toFixed(2)},${bottom} L${first.x.toFixed(2)},${bottom} Z" fill="url(#tlFill)" stroke="none"/>`;
+    markup+=`<path d="${curve}" fill="none" stroke="#ff4da6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#tlGlow)"/>`;
     taskCompletions.forEach(event=>{
       const x=xFor(event.at),y=yFor(interpolateSeriesAt(smoothWpmSeries,event.at));
-      markup+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${TASK_DOT_COLOR}" fill-opacity="0.8" stroke="#111014" stroke-width="1"/>`;
+      markup+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${bottom}" stroke="rgba(255,77,166,0.28)" stroke-width="1" stroke-dasharray="2 3"/>`;
+      markup+=`<circle cx="${x}" cy="${y}" r="4" fill="${TASK_DOT_COLOR}" stroke="#111014" stroke-width="2"/>`;
+      markup+=`<circle cx="${x}" cy="${y}" r="1.4" fill="#ffffff"/>`;
     });
     // Plain mistakes only show as their own dot when Punishments mode is off —
     // when Punishments is active every counted mistake already produces a
@@ -1869,7 +1937,8 @@ function renderTimeline(){
 
   const penalties=[...punishmentErrors,...timeErrors];
   const tasks=timelineEvents.filter(event=>event.type==='task');
-  document.getElementById('timelineMeta').textContent=tasks.length+' task'+(tasks.length!==1?'s':'')+' · peak '+Math.round(maxSpeed)+' WPM · '+penalties.length+' event'+(penalties.length!==1?'s':'');
+  const peakSpeed=Math.max(0,...smoothWpmSeries.map(point=>point.wpm||0));
+  document.getElementById('timelineMeta').textContent=tasks.length+' task'+(tasks.length!==1?'s':'')+' · peak '+Math.round(peakSpeed)+' WPM · '+penalties.length+' event'+(penalties.length!==1?'s':'');
 }
 
 function addModeStatCard(title,html){
@@ -2032,7 +2101,8 @@ function buildProofCanvas(){
     const proofTimeErrors=timelineEvents.filter(event=>event.type==='penalty'&&event.label==='No Breaks');
     const proofQuizErrors=timelineEvents.filter(event=>event.type==='quiz-error');
     const proofTaskCompletions=timelineEvents.filter(event=>event.type==='task');
-    const maxAt=Math.max(sessionElapsedMs,1),maxSpeed=Math.max(1,...wpmSamples.map(sample=>sample.wpm||0));
+    const proofSmoothSeries=prepareSmoothSeries(wpmSamples,sessionElapsedMs);
+    const maxAt=Math.max(sessionElapsedMs,1),maxSpeed=timelineAxisMax(proofSmoothSeries);
     const proofXFor=at=>chartLeft+(Math.min(maxAt,Math.max(0,at))/maxAt)*(chartRight-chartLeft);
     const proofYFor=wpm=>chartBottom-(Math.min(maxSpeed,Math.max(0,wpm||0))/maxSpeed)*(chartBottom-chartTop);
     [0,0.5,1].forEach(ratio=>{
@@ -2041,14 +2111,27 @@ function buildProofCanvas(){
       ctx.fillStyle='#7a6e7a';ctx.font='11px "DM Mono", monospace';ctx.fillText(Math.round(maxSpeed*ratio),pad+20,lineY+4);
     });
     if(wpmSamples.length){
-      const proofSmoothSeries=prepareSmoothSeries(wpmSamples);
       const points=proofSmoothSeries.map(point=>({x:proofXFor(point.at),y:proofYFor(point.wpm)}));
-      ctx.strokeStyle='#ff4da6';ctx.lineWidth=3;
+      const areaGradient=ctx.createLinearGradient(0,chartTop,0,chartBottom);
+      areaGradient.addColorStop(0,'rgba(255,77,166,0.30)');
+      areaGradient.addColorStop(1,'rgba(255,77,166,0)');
+      drawSmoothCanvasPath(ctx,points);
+      ctx.lineTo(points[points.length-1].x,chartBottom);
+      ctx.lineTo(points[0].x,chartBottom);
+      ctx.closePath();
+      ctx.fillStyle=areaGradient;ctx.fill();
+      ctx.strokeStyle='#ff4da6';ctx.lineWidth=3;ctx.lineJoin='round';ctx.lineCap='round';
       drawSmoothCanvasPath(ctx,points);
       ctx.stroke();
       const drawErrorDot=(x,y2,color,radius)=>{ctx.fillStyle=color;ctx.strokeStyle='#111014';ctx.lineWidth=radius>4?1.5:1;ctx.beginPath();ctx.arc(x,y2,radius,0,Math.PI*2);ctx.fill();ctx.stroke();};
       proofTaskCompletions.forEach(event=>{
-        drawErrorDot(proofXFor(event.at),proofYFor(interpolateSeriesAt(proofSmoothSeries,event.at)),TASK_DOT_COLOR,3.5);
+        const markerX=proofXFor(event.at),markerY=proofYFor(interpolateSeriesAt(proofSmoothSeries,event.at));
+        ctx.save();
+        ctx.strokeStyle='rgba(255,77,166,0.28)';ctx.lineWidth=1;ctx.setLineDash([2,3]);
+        ctx.beginPath();ctx.moveTo(markerX,markerY);ctx.lineTo(markerX,chartBottom);ctx.stroke();
+        ctx.restore();
+        drawErrorDot(markerX,markerY,TASK_DOT_COLOR,4.5);
+        ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(markerX,markerY,1.6,0,Math.PI*2);ctx.fill();
       });
       // Plain mistakes only get their own dot when Punishments mode is off — when
       // Punishments is active every counted mistake already triggers a punishment
