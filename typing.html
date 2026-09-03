@@ -234,6 +234,7 @@ body::before {
 .mode-stat-card h3::before { content: ''; width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--pink); }
 .mode-stat-card p { color: var(--muted); font-size: 0.75rem; line-height: 1.5; }
 .mode-stat-card p strong { color: var(--text); font-family: 'DM Mono', monospace; font-weight: 500; }
+.mode-stat-card .settings-code-small { display: block; margin-top: 4px; font-family: 'DM Mono', monospace; font-size: 0.58rem; line-height: 1.5; color: var(--muted); opacity: 0.7; word-break: break-all; }
 .task-list { display: flex; flex-direction: column; gap: 6px; }
 .task-list-empty { color: var(--muted); font-size: 0.8rem; padding: 0.75rem 0; }
 .task-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: start; background: var(--surface2); border: 1px solid var(--border); border-radius: 9px; padding: 0.7rem 0.8rem; }
@@ -826,6 +827,25 @@ let wpmSamples=[],errorEvents=[],completedWordsBaseline=0,lastWpmSampleAt=-1;
 const SETTINGS_CODE_PREFIX='WFP1.';
 const SETTINGS_MODE_NAMES=['punishment','punishmentPlus','slow','nobreaks','quiz'];
 let importedSettingsCode='',importedSettingsLocked=false;
+let sessionImportedSettingsCode='',sessionImportedSettingsPayload=null;
+
+function describeSettingsPayload(payload){
+  const parts=[];
+  if(payload.sessionMode==='timed'){
+    const h=payload.timedHours||0,m=payload.timedMinutes||0;
+    const timeStr=(h>0?h+' hour'+(h!==1?'s':'')+(m>0?' ':''):'')+(m>0||h===0?m+' minute'+(m!==1?'s':''):'');
+    parts.push('Timed Mode','Target: '+timeStr);
+  }else{
+    parts.push('Basic Mode',payload.taskCount+' task'+(payload.taskCount!==1?'s':''));
+  }
+  if(payload.modes.punishment)parts.push('Punishments');
+  if(payload.modes.punishmentPlus)parts.push('Punishments+');
+  if(payload.modes.slow)parts.push('Slow Mode');
+  if(payload.modes.nobreaks)parts.push('No Breaks ('+(payload.noBreaksGraceSeconds||3)+' second'+((payload.noBreaksGraceSeconds||3)!==1?'s':'')+')');
+  if(payload.modes.quiz)parts.push('Quiz');
+  if(payload.useCustomLines)parts.push('Custom Lines');
+  return parts.join(' · ');
+}
 
 function base64UrlEncode(value){
   const bytes=new TextEncoder().encode(value);
@@ -1181,6 +1201,8 @@ totalPunishmentTimeMs=0;
   noBreaksRecoveryActive=false;
   noBreaksSessionStarted=false;
   startTime=Date.now();
+  sessionImportedSettingsCode=importedSettingsCode;
+  sessionImportedSettingsPayload=importedSettingsCode?getSettingsPayload():null;
   recordTimelineEvent('start',{label:'Session started',wpm:0,errors:0});
   timedDeadline=sessionMode==='timed'?startTime+timedRequiredMs:0;
   document.getElementById('timer').innerText=sessionMode==='timed'?formatClock(timedRequiredMs):'00:00:00';
@@ -1966,11 +1988,15 @@ function renderModeStats(finalErrors){
     const added=sessionMode==='timed'
       ? Math.round(totalInactivityPenalties*TIMED_BREAK_PENALTY_MINUTES)+' min'
       : totalInactivityPenalties+' task'+(totalInactivityPenalties!==1?'s':'');
-    addModeStatCard('No Breaks','<strong>'+totalInactivityPenalties+'</strong> inactivity penalt'+(totalInactivityPenalties!==1?'ies':'y')+' · <strong>'+added+'</strong> added');
+    const graceSeconds=Math.round(noBreaksTypingGraceMs/1000);
+    addModeStatCard('No Breaks ('+graceSeconds+'s)','<strong>'+totalInactivityPenalties+'</strong> inactivity penalt'+(totalInactivityPenalties!==1?'ies':'y')+' · <strong>'+added+'</strong> added');
   }
   if(modes.quiz){
     const rate=totalQuizShown?Math.round(totalQuizPassed/totalQuizShown*100):0;
     addModeStatCard('Quiz','<strong>'+totalQuizPassed+'/'+totalQuizShown+'</strong> passed · <strong>'+rate+'%</strong> accuracy · '+totalQuizWrongAttempts+' failed attempt'+(totalQuizWrongAttempts!==1?'s':''));
+  }
+  if(sessionImportedSettingsPayload){
+    addModeStatCard('Imported Settings','<span class="settings-code-small">'+describeSettingsPayload(sessionImportedSettingsPayload)+'</span>');
   }
   document.getElementById('modeStatsMeta').textContent=(1+customLineTexts.length+Object.values(modes).filter(Boolean).length)+' active configuration item'+((customLineTexts.length+Object.values(modes).filter(Boolean).length)!==0?'s':'');
 }
@@ -2037,7 +2063,7 @@ function endGame(){
   document.getElementById('endSubtitle').innerText=subtitle;
   const importedSummary=document.getElementById('importedSettingsSummary');
   const importedCodeField=document.getElementById('importedSettingsCodeEnd');
-  if(importedSettingsCode){importedSummary.classList.remove('hidden');importedCodeField.value=importedSettingsCode;}
+  if(sessionImportedSettingsCode){importedSummary.classList.remove('hidden');importedCodeField.value=sessionImportedSettingsCode;}
   else{importedSummary.classList.add('hidden');importedCodeField.value='';}
   renderTimeline();
   renderModeStats(finalErrors);
@@ -2088,10 +2114,10 @@ function buildProofCanvas(){
       ctx.fillText(stat[1],x+16,y+61);ctx.fillStyle='#7a6e7a';ctx.font='12px "DM Sans", sans-serif';ctx.fillText(stat[2],x+16,y+87);
     });
     y+=cardHeight+22;
-    if(importedSettingsCode){
+    if(sessionImportedSettingsCode){
       ctx.fillStyle='#ff4da6';ctx.font='12px "DM Mono", monospace';ctx.fillText('IMPORTED SETTINGS USED',pad,y);
       y+=22;ctx.fillStyle='#f0e8f0';ctx.font='12px "DM Mono", monospace';
-      y+=proofDrawWrapped(ctx,importedSettingsCode,pad,y,innerWidth,18,'12px "DM Mono", monospace','#f0e8f0')+12;
+      y+=proofDrawWrapped(ctx,describeSettingsPayload(sessionImportedSettingsPayload),pad,y,innerWidth,18,'12px "DM Mono", monospace','#f0e8f0')+12;
     }
     proofRoundRect(ctx,pad,y,innerWidth,236,12,'#1a1820','rgba(255,77,166,0.28)');
     ctx.fillStyle='#f0e8f0';ctx.font='500 16px "DM Mono", monospace';ctx.fillText('SESSION TIMELINE',pad+20,y+28);
