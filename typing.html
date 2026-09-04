@@ -74,7 +74,7 @@ body::before {
 .btn-secondary { width: 100%; padding: 11px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.06em; cursor: pointer; background: transparent; color: var(--pink); border: 1px solid var(--border-strong); border-radius: 8px; transition: background 0.15s, color 0.15s, opacity 0.15s; touch-action: manipulation; min-height: 42px; }
 .btn-secondary:hover { background: var(--pink-glow); }
 .settings-panel { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
-.settings-panel.hidden, .imported-settings-summary.hidden { display: none; }
+.settings-panel.hidden { display: none; }
 .settings-panel label { font-size: 0.68rem; }
 .settings-code-field { width: 100%; min-height: 82px; padding: 10px; background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); border-radius: 7px; resize: vertical; outline: none; font-family: 'DM Mono', monospace; font-size: 0.72rem; line-height: 1.45; word-break: break-all; }
 .settings-code-field:focus { border-color: var(--pink); }
@@ -216,10 +216,6 @@ body::before {
 .end-stat .ev.red { color: var(--incorrect); }
 .end-stat .es { font-size: 0.68rem; color: var(--muted); margin-top: 4px; line-height: 1.35; }
 .end-stat.game-id .ev { font-size: clamp(0.86rem, 2vw, 1.1rem); letter-spacing: 0.04em; }
-.imported-settings-summary { margin-top: 10px; background: rgba(255,77,166,0.05); border: 1px solid var(--border-strong); border-radius: 10px; padding: 0.85rem 1rem; display: flex; flex-direction: column; gap: 7px; }
-.imported-settings-summary.hidden { display: none; }
-.imported-settings-label { font-size: 0.61rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pink); }
-.imported-settings-code { min-height: 60px; width: 100%; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 8px; resize: vertical; outline: none; font-family: 'DM Mono', monospace; font-size: 0.65rem; line-height: 1.4; word-break: break-all; }
 .timeline-wrap { margin-top: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; }
 .timeline-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.63rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .timeline-label strong { color: var(--text); font-weight: 500; }
@@ -507,10 +503,6 @@ body::before {
           <div class="end-stat"><div class="el">Typing Errors</div><div class="ev red" id="endErrors">-</div><div class="es">across typed text</div></div>
           <div class="end-stat"><div class="el">Tasks Typed</div><div class="ev" id="endTasks">-</div><div class="es">completed texts</div></div>
           <div class="end-stat game-id"><div class="el">Game ID</div><div class="ev" id="endGameId">-</div><div class="es">unique 9 digit ID</div></div>
-        </div>
-        <div id="importedSettingsSummary" class="imported-settings-summary hidden">
-          <div class="imported-settings-label">Imported Settings Used</div>
-          <textarea id="importedSettingsCodeEnd" class="imported-settings-code" readonly></textarea>
         </div>
         <div class="timeline-wrap">
           <div class="timeline-label"><strong>Session timeline</strong><span id="timelineMeta">Speed · errors · events</span></div>
@@ -2061,10 +2053,6 @@ function endGame(){
       : ' · '+totalInactivityPenalties+' inactivity task'+(totalInactivityPenalties!==1?'s':'')+' added';
   if(customLineTexts.length)subtitle+=' · custom lines';
   document.getElementById('endSubtitle').innerText=subtitle;
-  const importedSummary=document.getElementById('importedSettingsSummary');
-  const importedCodeField=document.getElementById('importedSettingsCodeEnd');
-  if(sessionImportedSettingsCode){importedSummary.classList.remove('hidden');importedCodeField.value=sessionImportedSettingsCode;}
-  else{importedSummary.classList.add('hidden');importedCodeField.value='';}
   renderTimeline();
   renderModeStats(finalErrors);
   renderTaskList();
