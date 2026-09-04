@@ -2049,7 +2049,26 @@ let proofBusy=false;
 function captureProofCanvas(){
   const report=document.getElementById('endReport');
   const bg=(getComputedStyle(document.documentElement).getPropertyValue('--bg')||'#080808').trim();
-  return html2canvas(report,{backgroundColor:bg,scale:2,useCORS:true});
+  // #endReport scrolls internally (max-height + overflow-y:auto), so html2canvas would
+  // otherwise only capture whatever slice is currently visible inside it. Let it grow to
+  // its full height for the capture, then restore. The scrollY compensation below handles
+  // the page itself being scrolled (the report sits below the title and above the buttons).
+  const prevMaxHeight=report.style.maxHeight;
+  const prevOverflowY=report.style.overflowY;
+  report.style.maxHeight='none';
+  report.style.overflowY='visible';
+  return html2canvas(report,{
+    backgroundColor:bg,
+    scale:2,
+    useCORS:true,
+    scrollX:0,
+    scrollY:-window.scrollY,
+    windowWidth:document.documentElement.scrollWidth,
+    windowHeight:document.documentElement.scrollHeight
+  }).finally(()=>{
+    report.style.maxHeight=prevMaxHeight;
+    report.style.overflowY=prevOverflowY;
+  });
 }
 
 function canvasToBlobAsync(canvas){
