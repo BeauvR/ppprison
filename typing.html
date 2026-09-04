@@ -490,7 +490,6 @@ body::before {
     <div class="end-report" id="endReport">
       <div class="end-title">
         <h1>Session<br><em>Complete.</em></h1>
-        <p id="endSubtitle">-</p>
       </div>
 
       <section class="end-section" aria-labelledby="overallHeading">
@@ -2026,17 +2025,6 @@ function endGame(){
   document.getElementById('endTasks').innerText=taskRecords.length;
   document.getElementById('endGameId').innerText=gameId;
   document.getElementById('overallSessionMeta').textContent=sessionMode==='timed'?'Timed session':'Basic session';
-  let subtitle=sessionMode==='timed'
-    ? 'Timed session · '+taskRecords.length+' text'+(taskRecords.length!==1?'s':'')+' completed'
-    : total+' text'+(total!==1?'s':'')+' completed';
-  if((modes.punishment||modes.punishmentPlus)&&totalPunishments>0)
-    subtitle+=' · '+totalPunishments+' reset'+(totalPunishments!==1?'s':'')+' triggered';
-  if(modes.nobreaks&&totalInactivityPenalties>0)
-    subtitle+=sessionMode==='timed'
-      ? ' · '+(totalInactivityPenalties*TIMED_BREAK_PENALTY_MINUTES)+' penalty minute'+(totalInactivityPenalties!==1?'s':'')+' added'
-      : ' · '+totalInactivityPenalties+' inactivity task'+(totalInactivityPenalties!==1?'s':'')+' added';
-  if(customLineTexts.length)subtitle+=' · custom lines';
-  document.getElementById('endSubtitle').innerText=subtitle;
   renderTimeline();
   renderModeStats(finalErrors);
   renderTaskList();
