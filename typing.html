@@ -214,7 +214,6 @@ body::before {
 .end-stat .ev { font-family: 'DM Mono', monospace; font-size: clamp(1rem, 2.5vw, 1.45rem); font-weight: 500; color: var(--text); overflow-wrap: anywhere; }
 .end-stat .ev.pink { color: var(--pink); }
 .end-stat .ev.red { color: var(--incorrect); }
-.end-stat .es { font-size: 0.68rem; color: var(--muted); margin-top: 4px; line-height: 1.35; }
 .end-stat.game-id .ev { font-size: clamp(0.86rem, 2vw, 1.1rem); letter-spacing: 0.04em; }
 .timeline-wrap { margin-top: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem; }
 .timeline-label { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.63rem; letter-spacing: 0.1em; text-transform: uppercase; }
@@ -498,11 +497,11 @@ body::before {
           <span id="overallSessionMeta">-</span>
         </div>
         <div class="end-overall-grid">
-          <div class="end-stat"><div class="el">Total Time</div><div class="ev" id="endTime">-</div><div class="es">including mode events</div></div>
-          <div class="end-stat"><div class="el">Words / Minute</div><div class="ev pink" id="endWpm">-</div><div class="es">session average</div></div>
-          <div class="end-stat"><div class="el">Typing Errors</div><div class="ev red" id="endErrors">-</div><div class="es">across typed text</div></div>
-          <div class="end-stat"><div class="el">Tasks Typed</div><div class="ev" id="endTasks">-</div><div class="es">completed texts</div></div>
-          <div class="end-stat game-id"><div class="el">Game ID</div><div class="ev" id="endGameId">-</div><div class="es">unique 9 digit ID</div></div>
+          <div class="end-stat"><div class="el">Total Time</div><div class="ev" id="endTime">-</div></div>
+          <div class="end-stat"><div class="el">Words / Minute</div><div class="ev pink" id="endWpm">-</div></div>
+          <div class="end-stat"><div class="el">Typing Errors</div><div class="ev red" id="endErrors">-</div></div>
+          <div class="end-stat"><div class="el">Tasks Typed</div><div class="ev" id="endTasks">-</div></div>
+          <div class="end-stat game-id"><div class="el">Game ID</div><div class="ev" id="endGameId">-</div></div>
         </div>
         <div class="timeline-wrap">
           <div class="timeline-label"><strong>Session timeline</strong><span id="timelineMeta">Speed · errors · events</span></div>
