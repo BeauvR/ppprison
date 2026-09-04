@@ -818,9 +818,11 @@ let taskRecords=[],timelineEvents=[],gameId='',sessionElapsedMs=0,taskInProgress
 let sessionDeviceType='Desktop';
 let wpmSamples=[],errorEvents=[],completedWordsBaseline=0,lastWpmSampleAt=-1;
 const SETTINGS_CODE_PREFIX='WFP1.';
+const SETTINGS_CODE_PREFIX_V2='WFP2.';
 const SETTINGS_MODE_NAMES=['punishment','punishmentPlus','slow','nobreaks','quiz'];
 let importedSettingsCode='',importedSettingsLocked=false;
 let sessionImportedSettingsCode='',sessionImportedSettingsPayload=null;
+const SUPPORTS_COMPRESSION=typeof CompressionStream!=='undefined'&&typeof DecompressionStream!=='undefined';
 
 function describeSettingsPayload(payload){
   const parts=[];
@@ -840,19 +842,35 @@ function describeSettingsPayload(payload){
   return parts.join(' · ');
 }
 
-function base64UrlEncode(value){
-  const bytes=new TextEncoder().encode(value);
+function bytesToBase64Url(bytes){
   let binary='';
   for(let i=0;i<bytes.length;i+=0x8000)
     binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
   return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 
-function base64UrlDecode(value){
+function base64UrlToBytes(value){
   const padded=value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4);
   const binary=atob(padded);
-  const bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  return Uint8Array.from(binary,char=>char.charCodeAt(0));
+}
+
+function base64UrlEncode(value){
+  return bytesToBase64Url(new TextEncoder().encode(value));
+}
+
+function base64UrlDecode(value){
+  return new TextDecoder().decode(base64UrlToBytes(value));
+}
+
+async function compressToBytes(text){
+  const stream=new Blob([text]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function decompressFromBytes(bytes){
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new TextDecoder().decode(await new Response(stream).arrayBuffer());
 }
 
 function getSettingsPayload(){
@@ -869,8 +887,14 @@ function getSettingsPayload(){
   };
 }
 
-function encodeSettingsCode(payload){
-  return SETTINGS_CODE_PREFIX+base64UrlEncode(JSON.stringify(payload));
+async function encodeSettingsCode(payload){
+  const json=JSON.stringify(payload);
+  if(SUPPORTS_COMPRESSION){
+    try{
+      return SETTINGS_CODE_PREFIX_V2+bytesToBase64Url(await compressToBytes(json));
+    }catch(error){}
+  }
+  return SETTINGS_CODE_PREFIX+base64UrlEncode(json);
 }
 
 function validateSettingsPayload(payload){
@@ -906,20 +930,30 @@ function validateSettingsPayload(payload){
   return payload;
 }
 
-function decodeSettingsCode(rawCode){
+async function decodeSettingsCode(rawCode){
   let code=rawCode.trim();
   try{
     const sharedUrl=new URL(code,document.location.href);
     const urlSettings=sharedUrl.searchParams.get('settings');
     if(urlSettings)code=urlSettings.trim();
   }catch(error){}
-  if(!code.startsWith(SETTINGS_CODE_PREFIX))throw new Error('That does not look like a WriteForPerfection settings code.');
   if(code.length>100000)throw new Error('That settings code is too large.');
   let payload;
-  try{
-    payload=JSON.parse(base64UrlDecode(code.slice(SETTINGS_CODE_PREFIX.length)));
-  }catch(error){
-    throw new Error('That settings code is incomplete or invalid.');
+  if(code.startsWith(SETTINGS_CODE_PREFIX_V2)){
+    if(!SUPPORTS_COMPRESSION)throw new Error('This settings code needs a newer browser to open.');
+    try{
+      payload=JSON.parse(await decompressFromBytes(base64UrlToBytes(code.slice(SETTINGS_CODE_PREFIX_V2.length))));
+    }catch(error){
+      throw new Error('That settings code is incomplete or invalid.');
+    }
+  }else if(code.startsWith(SETTINGS_CODE_PREFIX)){
+    try{
+      payload=JSON.parse(base64UrlDecode(code.slice(SETTINGS_CODE_PREFIX.length)));
+    }catch(error){
+      throw new Error('That settings code is incomplete or invalid.');
+    }
+  }else{
+    throw new Error('That does not look like a WriteForPerfection settings code.');
   }
   return {code,payload:validateSettingsPayload(payload)};
 }
@@ -930,8 +964,8 @@ function setSettingsMessage(message,type=''){
   el.className='settings-message'+(type?' '+type:'');
 }
 
-function exportSettings(){
-  const code=importedSettingsCode||encodeSettingsCode(getSettingsPayload());
+async function exportSettings(){
+  const code=importedSettingsCode||await encodeSettingsCode(getSettingsPayload());
   const base = document.location.href.split('?')[0];
   const link = base + '?settings=' + code
 
@@ -947,9 +981,9 @@ function toggleImportPanel(){
   if(opening)document.getElementById('settingsImportInput').focus();
 }
 
-function copySettingsCode(){
+async function copySettingsCode(){
   const field=document.getElementById('settingsCodeOutput');
-  if(!field.value)exportSettings();
+  if(!field.value)await exportSettings();
   field.focus();
   field.select();
   const code=field.value;
@@ -996,9 +1030,9 @@ function clearImportedSettings(){
   setSettingsMessage('Imported settings cleared. You can edit the configuration again.');
 }
 
-function importSettings(settings = null){
+async function importSettings(settings = null){
   try{
-    const result=decodeSettingsCode(settings ?? document.getElementById('settingsImportInput').value);
+    const result=await decodeSettingsCode(settings ?? document.getElementById('settingsImportInput').value);
     const payload=result.payload;
     sessionMode=payload.sessionMode;
     document.getElementById('taskCount').value=payload.taskCount;
